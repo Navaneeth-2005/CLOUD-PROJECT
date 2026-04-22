@@ -27,7 +27,7 @@ app.use(express.json());
 app.use(generalLimiter);
 
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', message: 'CloudJudge Pro backend is running!' });
+  res.json({ status: 'ok', message: 'CodeStorm backend is running!' });
 });
 
 app.use('/api/auth', authLimiter, authRoutes);
