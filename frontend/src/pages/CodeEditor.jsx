@@ -28,14 +28,19 @@ const CodeEditor = () => {
     'c++': '// Write your C++ solution here\n\n#include <iostream>\nusing namespace std;\n\nint main() {\n    \n    return 0;\n}'
   };
 
-  useEffect(() => {
-    fetchData();
-    setupAntiCheat();
-    return () => {
-      clearInterval(timerRef.current);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, []);
+  // Fetch data when question changes
+useEffect(() => {
+  fetchData();
+}, [contestId, questionId]);
+
+// Setup anti-cheat ONLY once
+useEffect(() => {
+  setupAntiCheat();
+  return () => {
+    clearInterval(timerRef.current);
+    document.removeEventListener('visibilitychange', handleVisibilityChange);
+  };
+}, []);
 
   useEffect(() => {
     setCode(defaultCode[language]);
@@ -45,12 +50,14 @@ const CodeEditor = () => {
     try {
       const contestRes = await API.get(`/contests/${contestId}`);
       setContest(contestRes.data.contest);
-      setQuestions(contestRes.data.contest.questions || []);
+      const allQuestions = contestRes.data.contest.questions || [];
+      setQuestions(allQuestions);
 
-      const q = contestRes.data.contest.questions?.find(
-        q => q.id === parseInt(questionId)
+      // Fix — convert both to string for safe comparison
+      const q = allQuestions.find(
+        q => String(q.id) === String(questionId)
       );
-      setQuestion(q);
+      setQuestion(q || allQuestions[0]);
 
       // Start timer
       const endTime = new Date(contestRes.data.contest.endTime);

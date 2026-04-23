@@ -27,7 +27,12 @@ router.post('/create', authMiddleware, roleMiddleware('company', 'admin'), async
 router.get('/all', authMiddleware, async (req, res) => {
   try {
     const contests = await Contest.findAll({
-      include: [{ association: 'questions' }],
+      include: [{
+        model: Question,
+        as: 'questions',
+        separate: true,
+        order: [['id', 'ASC']]
+      }],
       order: [['createdAt', 'DESC']]
     });
 
@@ -41,7 +46,12 @@ router.get('/all', authMiddleware, async (req, res) => {
 router.get('/:id', authMiddleware, async (req, res) => {
   try {
     const contest = await Contest.findByPk(req.params.id, {
-      include: [{ association: 'questions' }]
+      include: [{
+        model: Question,
+        as: 'questions',
+        separate: true,
+        order: [['id', 'ASC']]
+      }]
     });
 
     if (!contest) {
