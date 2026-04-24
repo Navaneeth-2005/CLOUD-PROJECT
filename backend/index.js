@@ -10,12 +10,15 @@ const submissionRoutes = require('./routes/submission');
 const leaderboardRoutes = require('./routes/leaderboard');
 const analyticsRoutes = require('./routes/analytics');
 const cheatingRoutes = require('./routes/cheating');
+const registrationRoutes = require('./routes/registration');
 
 const User = require('./models/User');
 const Contest = require('./models/Contest');
 const Question = require('./models/Question');
 const Submission = require('./models/Submission');
 const CheatingLog = require('./models/CheatingLog');
+const ContestRegistration = require('./models/ContestRegistration');
+
 
 const { generalLimiter, authLimiter, submissionLimiter } = require('./middleware/rateLimiter');
 
@@ -36,6 +39,7 @@ app.use('/api/submissions', submissionLimiter, submissionRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/cheating', cheatingRoutes);
+app.use('/api/registration', registrationRoutes);
 
 const PORT = process.env.PORT || 5000;
 

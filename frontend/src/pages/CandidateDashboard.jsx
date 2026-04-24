@@ -13,6 +13,15 @@ const CandidateDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('contests');
   const [hoveredCard, setHoveredCard] = useState(null);
+  const [registeredContests, setRegisteredContests] = useState([]);
+  const [registeringId, setRegisteringId] = useState(null);
+  const [showRegisterModal, setShowRegisterModal] = useState(false);
+  const [selectedContest, setSelectedContest] = useState(null);
+  const [regForm, setRegForm] = useState({
+    phone: '',
+    college: '',
+    experience: ''
+  });
 
   useEffect(() => {
     fetchAll();
@@ -28,10 +37,62 @@ const CandidateDashboard = () => {
       setContests(contestRes.data.contests);
       setSubmissions(submissionRes.data.submissions);
       setPerformance(perfRes.data.summary);
+      await checkRegistrations(contestRes.data.contests);
     } catch (err) {
       toast.error('Failed to load dashboard');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const checkRegistrations = async (contests) => {
+    try {
+      const results = await Promise.all(
+        contests.map(c => API.get(`/registration/check/${c.id}`))
+      );
+      const registeredIds = contests
+        .filter((_, i) => results[i].data.isRegistered)
+        .map(c => c.id);
+      setRegisteredContests(registeredIds);
+    } catch (err) {
+      console.error('Failed to check registrations');
+    }
+  };
+
+  const handleRegister = (contest) => {
+    setSelectedContest(contest);
+    setRegForm({ phone: '', college: '', experience: '' });
+    setShowRegisterModal(true);
+  };
+
+  const confirmRegister = async () => {
+    if (!regForm.phone || !regForm.college) {
+      toast.error('Please fill in all required fields!');
+      return;
+    }
+    try {
+      setRegisteringId(selectedContest.id);
+      await API.post('/registration/register', {
+        contestId: selectedContest.id,
+        phone: regForm.phone,
+        college: regForm.college,
+        experience: regForm.experience
+      });
+      toast.success('Registered! Check your email for contest details 📧');
+      setRegisteredContests([...registeredContests, selectedContest.id]);
+      setShowRegisterModal(false);
+      setRegForm({ phone: '', college: '', experience: '' });
+
+      // Only navigate into contest if it's live
+      const now = new Date();
+      const startTime = new Date(selectedContest.startTime);
+      if (now >= startTime && selectedContest.questions?.length > 0) {
+        navigate(`/contest/${selectedContest.id}/question/${selectedContest.questions[0].id}`);
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Registration failed');
+    } finally {
+      setRegisteringId(null);
     }
   };
 
@@ -54,6 +115,51 @@ const CandidateDashboard = () => {
     }
   };
 
+  const getButtonConfig = (status, isRegistered) => {
+    const isEnded = status.label === 'Ended';
+    const isLive = status.label === 'Live';
+    const isUpcoming = status.label === 'Upcoming';
+
+    if (isEnded) {
+      return {
+        label: '🏁 Ended',
+        bg: '#e0e0e0',
+        opacity: 0.5,
+        cursor: 'not-allowed'
+      };
+    }
+    if (!isRegistered) {
+      return {
+        label: '📋 Register',
+        bg: 'linear-gradient(135deg, #4fc3f7, #0288d1)',
+        opacity: 1,
+        cursor: 'pointer'
+      };
+    }
+    if (isUpcoming) {
+      return {
+        label: '⏰ Registered',
+        bg: 'linear-gradient(135deg, #f59e0b, #d97706)',
+        opacity: 1,
+        cursor: 'pointer'
+      };
+    }
+    if (isLive) {
+      return {
+        label: '▶ Enter Contest',
+        bg: 'linear-gradient(135deg, #10b981, #059669)',
+        opacity: 1,
+        cursor: 'pointer'
+      };
+    }
+    return {
+      label: status.label,
+      bg: '#e0e0e0',
+      opacity: 0.5,
+      cursor: 'not-allowed'
+    };
+  };
+
   return (
     <div style={styles.page}>
       <style>{`
@@ -68,6 +174,10 @@ const CandidateDashboard = () => {
         @keyframes slideIn {
           from { opacity: 0; transform: translateX(-20px); }
           to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes modalIn {
+          from { opacity: 0; transform: scale(0.9); }
+          to { opacity: 1; transform: scale(1); }
         }
       `}</style>
 
@@ -132,7 +242,8 @@ const CandidateDashboard = () => {
                 color: activeTab === tab ? 'white' : '#666',
                 boxShadow: activeTab === tab
                   ? '0 4px 15px rgba(79,195,247,0.4)'
-                  : 'none'
+                  : 'none',
+                border: activeTab === tab ? 'none' : '1px solid #e0e0e0'
               }}
               onClick={() => setActiveTab(tab)}
             >
@@ -165,6 +276,10 @@ const CandidateDashboard = () => {
                 {contests.map((contest, i) => {
                   const status = getStatus(contest);
                   const isLive = status.label === 'Live';
+                  const isEnded = status.label === 'Ended';
+                  const isRegistered = registeredContests.includes(contest.id);
+                  const btnConfig = getButtonConfig(status, isRegistered);
+
                   return (
                     <div
                       key={contest.id}
@@ -189,9 +304,14 @@ const CandidateDashboard = () => {
                         }}>
                           {status.label === 'Live' && '● '}{status.label}
                         </span>
-                        <span style={styles.questionCount}>
-                          {contest.questions?.length || 0} questions
-                        </span>
+                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                          {isRegistered && (
+                            <span style={styles.registeredBadge}>✓ Registered</span>
+                          )}
+                          <span style={styles.questionCount}>
+                            {contest.questions?.length || 0} questions
+                          </span>
+                        </div>
                       </div>
 
                       <h3 style={styles.cardTitle}>{contest.title}</h3>
@@ -231,12 +351,23 @@ const CandidateDashboard = () => {
                         <button
                           style={{
                             ...styles.actionBtnPrimary,
-                            opacity: isLive ? 1 : 0.5,
-                            cursor: isLive ? 'pointer' : 'not-allowed'
+                            background: btnConfig.bg,
+                            opacity: btnConfig.opacity,
+                            cursor: btnConfig.cursor
                           }}
                           onClick={() => {
+                            if (isEnded) {
+                              toast.info('This contest has ended!');
+                              return;
+                            }
+                            if (!isRegistered) {
+                              handleRegister(contest);
+                              return;
+                            }
                             if (!isLive) {
-                              toast.info('Contest is not live yet!');
+                              toast.info(
+                                `You are registered! Contest starts on ${new Date(contest.startTime).toLocaleString()}`
+                              );
                               return;
                             }
                             if (contest.questions?.length > 0) {
@@ -246,7 +377,7 @@ const CandidateDashboard = () => {
                             }
                           }}
                         >
-                          {isLive ? 'Enter Contest' : status.label}
+                          {btnConfig.label}
                         </button>
                       </div>
                     </div>
@@ -299,7 +430,6 @@ const CandidateDashboard = () => {
                           </p>
                         </div>
                       </div>
-
                       <div style={styles.subRight}>
                         <span style={styles.subLang}>{sub.language}</span>
                         <span style={{
@@ -309,9 +439,7 @@ const CandidateDashboard = () => {
                         }}>
                           {sub.status}
                         </span>
-                        <span style={styles.subScore}>
-                          {sub.score} pts
-                        </span>
+                        <span style={styles.subScore}>{sub.score} pts</span>
                         <span style={styles.subDate}>
                           {new Date(sub.createdAt).toLocaleDateString()}
                         </span>
@@ -324,6 +452,152 @@ const CandidateDashboard = () => {
           </div>
         )}
       </div>
+
+      {/* Registration Modal */}
+      {showRegisterModal && selectedContest && (
+        <div style={styles.overlay} onClick={() => setShowRegisterModal(false)}>
+          <div style={{
+            ...styles.modal,
+            textAlign: 'left',
+            maxWidth: '500px',
+            maxHeight: '90vh',
+            overflowY: 'auto'
+          }} onClick={e => e.stopPropagation()}>
+
+            <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+              <div style={styles.modalIcon}>📋</div>
+              <h2 style={styles.modalTitle}>Register for Contest</h2>
+              <p style={{ fontSize: '14px', color: '#666', margin: 0 }}>
+                Fill in your details to register for <strong>{selectedContest.title}</strong>
+              </p>
+            </div>
+
+            {/* Contest Info */}
+            <div style={styles.modalInfo}>
+              <div style={styles.modalInfoItem}>
+                <span style={styles.modalInfoLabel}>📅 Start</span>
+                <span style={styles.modalInfoValue}>
+                  {new Date(selectedContest.startTime).toLocaleString()}
+                </span>
+              </div>
+              <div style={styles.modalInfoItem}>
+                <span style={styles.modalInfoLabel}>🏁 End</span>
+                <span style={styles.modalInfoValue}>
+                  {new Date(selectedContest.endTime).toLocaleString()}
+                </span>
+              </div>
+              <div style={styles.modalInfoItem}>
+                <span style={styles.modalInfoLabel}>❓ Questions</span>
+                <span style={styles.modalInfoValue}>
+                  {selectedContest.questions?.length || 0}
+                </span>
+              </div>
+              <div style={styles.modalInfoItem}>
+                <span style={styles.modalInfoLabel}>📊 Status</span>
+                <span style={{
+                  ...styles.modalInfoValue,
+                  color: getStatus(selectedContest).color
+                }}>
+                  {getStatus(selectedContest).label}
+                </span>
+              </div>
+            </div>
+
+            {/* Registration Form */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '20px' }}>
+              <div style={styles.formField}>
+                <label style={styles.formLabel}>📱 Phone Number *</label>
+                <input
+                  type="tel"
+                  value={regForm.phone}
+                  onChange={e => setRegForm({ ...regForm, phone: e.target.value })}
+                  style={styles.formInput}
+                  placeholder="Enter your phone number"
+                  required
+                />
+              </div>
+              <div style={styles.formField}>
+                <label style={styles.formLabel}>🏫 College / Company *</label>
+                <input
+                  type="text"
+                  value={regForm.college}
+                  onChange={e => setRegForm({ ...regForm, college: e.target.value })}
+                  style={styles.formInput}
+                  placeholder="Enter your college or company name"
+                  required
+                />
+              </div>
+              <div style={styles.formField}>
+                <label style={styles.formLabel}>💼 Experience Level</label>
+                <select
+                  value={regForm.experience}
+                  onChange={e => setRegForm({ ...regForm, experience: e.target.value })}
+                  style={styles.formInput}
+                >
+                  <option value="">Select experience level</option>
+                  <option value="fresher">Fresher (0-1 years)</option>
+                  <option value="junior">Junior (1-3 years)</option>
+                  <option value="mid">Mid Level (3-5 years)</option>
+                  <option value="senior">Senior (5+ years)</option>
+                </select>
+              </div>
+
+              {/* Email notice */}
+              <div style={{
+                background: '#f0f9ff',
+                border: '1px solid #bae6fd',
+                borderRadius: '10px',
+                padding: '12px 14px',
+                fontSize: '13px',
+                color: '#0369a1'
+              }}>
+                📧 Login credentials and contest link will be sent to{' '}
+                <strong>{user?.email}</strong> after registration
+              </div>
+
+              {/* Upcoming notice */}
+              {getStatus(selectedContest).label === 'Upcoming' && (
+                <div style={{
+                  background: '#fefce8',
+                  border: '1px solid #fde047',
+                  borderRadius: '10px',
+                  padding: '12px 14px',
+                  fontSize: '13px',
+                  color: '#854d0e'
+                }}>
+                  ⏰ This is an upcoming contest. You can register now and enter when it goes live on{' '}
+                  <strong>{new Date(selectedContest.startTime).toLocaleString()}</strong>
+                </div>
+              )}
+            </div>
+
+            <div style={styles.modalActions}>
+              <button
+                style={styles.cancelBtn}
+                onClick={() => setShowRegisterModal(false)}
+              >
+                Cancel
+              </button>
+              <button
+                style={{
+                  ...styles.confirmBtn,
+                  opacity: registeringId === selectedContest.id || !regForm.phone || !regForm.college
+                    ? 0.6
+                    : 1,
+                  cursor: !regForm.phone || !regForm.college ? 'not-allowed' : 'pointer'
+                }}
+                onClick={confirmRegister}
+                disabled={registeringId === selectedContest.id || !regForm.phone || !regForm.college}
+              >
+                {registeringId === selectedContest.id
+                  ? 'Registering...'
+                  : '✓ Register & Get Credentials'
+                }
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -421,13 +695,11 @@ const styles = {
   },
   tab: {
     padding: '10px 24px',
-    border: 'none',
     borderRadius: '12px',
     fontSize: '14px',
     fontWeight: '600',
     cursor: 'pointer',
-    transition: 'all 0.3s',
-    border: '1px solid #e0e0e0'
+    transition: 'all 0.3s'
   },
   tabContent: {
     animation: 'fadeIn 0.3s ease-out'
@@ -456,6 +728,14 @@ const styles = {
     fontWeight: '600',
     padding: '4px 12px',
     borderRadius: '20px'
+  },
+  registeredBadge: {
+    fontSize: '11px',
+    fontWeight: '600',
+    padding: '3px 8px',
+    borderRadius: '20px',
+    background: '#d1fae5',
+    color: '#10b981'
   },
   questionCount: {
     fontSize: '12px',
@@ -526,12 +806,10 @@ const styles = {
   actionBtnPrimary: {
     flex: 1,
     padding: '10px',
-    background: 'linear-gradient(135deg, #4fc3f7, #0288d1)',
     border: 'none',
     borderRadius: '10px',
     fontSize: '13px',
     fontWeight: '600',
-    cursor: 'pointer',
     transition: 'all 0.3s',
     color: 'white'
   },
@@ -639,6 +917,106 @@ const styles = {
     fontSize: '14px',
     color: '#888',
     margin: 0
+  },
+  overlay: {
+    position: 'fixed',
+    top: 0, left: 0, right: 0, bottom: 0,
+    background: 'rgba(0,0,0,0.6)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1000,
+    backdropFilter: 'blur(4px)'
+  },
+  modal: {
+    background: 'white',
+    borderRadius: '24px',
+    padding: '40px',
+    width: '100%',
+    maxWidth: '440px',
+    textAlign: 'center',
+    animation: 'modalIn 0.3s ease-out',
+    boxShadow: '0 25px 60px rgba(0,0,0,0.3)'
+  },
+  modalIcon: { fontSize: '52px', marginBottom: '16px' },
+  modalTitle: {
+    fontSize: '22px',
+    fontWeight: '700',
+    color: '#1a1a2e',
+    margin: '0 0 12px'
+  },
+  modalInfo: {
+    background: '#f8f9fa',
+    borderRadius: '14px',
+    padding: '16px',
+    marginBottom: '20px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '10px',
+    textAlign: 'left'
+  },
+  modalInfoItem: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center'
+  },
+  modalInfoLabel: {
+    fontSize: '13px',
+    color: '#888',
+    fontWeight: '500'
+  },
+  modalInfoValue: {
+    fontSize: '13px',
+    fontWeight: '600',
+    color: '#333'
+  },
+  modalActions: {
+    display: 'flex',
+    gap: '12px'
+  },
+  cancelBtn: {
+    flex: 1,
+    padding: '12px',
+    background: '#f5f5f5',
+    border: 'none',
+    borderRadius: '12px',
+    fontSize: '14px',
+    fontWeight: '500',
+    cursor: 'pointer',
+    color: '#666'
+  },
+  confirmBtn: {
+    flex: 1,
+    padding: '12px',
+    background: 'linear-gradient(135deg, #4fc3f7, #0288d1)',
+    border: 'none',
+    borderRadius: '12px',
+    fontSize: '14px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    color: 'white',
+    boxShadow: '0 4px 15px rgba(79,195,247,0.4)'
+  },
+  formField: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '6px'
+  },
+  formLabel: {
+    fontSize: '13px',
+    fontWeight: '600',
+    color: '#444'
+  },
+  formInput: {
+    padding: '10px 14px',
+    border: '2px solid #e0e0e0',
+    borderRadius: '10px',
+    fontSize: '14px',
+    outline: 'none',
+    color: '#333',
+    transition: 'border 0.2s',
+    background: 'white'
   }
 };
+
 export default CandidateDashboard;

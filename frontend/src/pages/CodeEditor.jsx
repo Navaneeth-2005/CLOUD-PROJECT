@@ -19,6 +19,7 @@ const CodeEditor = () => {
   const [timeLeft, setTimeLeft] = useState(null);
   const [questions, setQuestions] = useState([]);
   const [activePanel, setActivePanel] = useState('problem');
+  const [showExitModal, setShowExitModal] = useState(false);
   const timerRef = useRef(null);
   const tabSwitchCount = useRef(0);
 
@@ -29,18 +30,28 @@ const CodeEditor = () => {
   };
 
   // Fetch data when question changes
-useEffect(() => {
-  fetchData();
-}, [contestId, questionId]);
+  useEffect(() => {
+    fetchData();
+  }, [contestId, questionId]);
 
-// Setup anti-cheat ONLY once
-useEffect(() => {
-  setupAntiCheat();
-  return () => {
-    clearInterval(timerRef.current);
-    document.removeEventListener('visibilitychange', handleVisibilityChange);
-  };
-}, []);
+  // Setup anti-cheat ONLY once
+  useEffect(() => {
+    setupAntiCheat();
+
+    // Warn on browser refresh or close
+    const handleBeforeUnload = (e) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      clearInterval(timerRef.current);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      document.removeEventListener('contextmenu', handleContextMenu);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, []);
 
   useEffect(() => {
     setCode(defaultCode[language]);
@@ -53,13 +64,13 @@ useEffect(() => {
       const allQuestions = contestRes.data.contest.questions || [];
       setQuestions(allQuestions);
 
-      // Fix — convert both to string for safe comparison
       const q = allQuestions.find(
         q => String(q.id) === String(questionId)
       );
       setQuestion(q || allQuestions[0]);
 
-      // Start timer
+      // Clear old timer before starting new one
+      clearInterval(timerRef.current);
       const endTime = new Date(contestRes.data.contest.endTime);
       startTimer(endTime);
     } catch (err) {
@@ -108,9 +119,11 @@ useEffect(() => {
     }
   };
 
+  const handleContextMenu = (e) => e.preventDefault();
+
   const setupAntiCheat = () => {
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    document.addEventListener('contextmenu', e => e.preventDefault());
+    document.addEventListener('contextmenu', handleContextMenu);
   };
 
   const handleSubmit = async () => {
@@ -190,9 +203,9 @@ useEffect(() => {
           from { opacity: 0; transform: translateY(10px); }
           to { opacity: 1; transform: translateY(0); }
         }
-        @keyframes slideUp {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
+        @keyframes modalIn {
+          from { opacity: 0; transform: scale(0.9); }
+          to { opacity: 1; transform: scale(1); }
         }
       `}</style>
 
@@ -201,8 +214,8 @@ useEffect(() => {
         <div style={styles.topLeft}>
           <button
             style={styles.backBtn}
-            onClick={() => navigate('/candidate/dashboard')}
-            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.15)'}
+            onClick={() => setShowExitModal(true)}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,107,107,0.2)'}
             onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
           >
             ← Back
@@ -268,10 +281,10 @@ useEffect(() => {
                   key={q.id}
                   style={{
                     ...styles.questionNavBtn,
-                    background: q.id === parseInt(questionId)
+                    background: String(q.id) === String(questionId)
                       ? 'linear-gradient(135deg, #4fc3f7, #0288d1)'
                       : 'rgba(255,255,255,0.08)',
-                    color: q.id === parseInt(questionId) ? 'white' : '#aaa'
+                    color: String(q.id) === String(questionId) ? 'white' : '#aaa'
                   }}
                   onClick={() => navigate(`/contest/${contestId}/question/${q.id}`)}
                 >
@@ -473,6 +486,46 @@ useEffect(() => {
           />
         </div>
       </div>
+
+      {/* Exit Contest Modal */}
+      {showExitModal && (
+        <div style={styles.overlay} onClick={() => setShowExitModal(false)}>
+          <div style={styles.exitModal} onClick={e => e.stopPropagation()}>
+            <div style={styles.exitIcon}>⚠️</div>
+            <h2 style={styles.exitTitle}>Leave Contest?</h2>
+            <p style={styles.exitDesc}>
+              Are you sure you want to leave? Your current code will not be saved
+              and you may lose your progress.
+            </p>
+            <div style={styles.exitWarningBox}>
+              <p style={styles.exitWarningText}>
+                🚨 Leaving mid-contest may be flagged as suspicious activity.
+              </p>
+            </div>
+            <div style={styles.exitActions}>
+              <button
+                style={styles.stayBtn}
+                onClick={() => setShowExitModal(false)}
+                onMouseEnter={e => e.currentTarget.style.background = 'linear-gradient(135deg, #0288d1, #26c6da)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'linear-gradient(135deg, #4fc3f7, #0288d1)'}
+              >
+                Stay in Contest
+              </button>
+              <button
+                style={styles.leaveBtn}
+                onClick={() => {
+                  setShowExitModal(false);
+                  navigate('/candidate/dashboard');
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = '#dc2626'}
+                onMouseLeave={e => e.currentTarget.style.background = '#ef4444'}
+              >
+                Leave Anyway
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -503,8 +556,8 @@ const styles = {
   },
   backBtn: {
     background: 'rgba(255,255,255,0.08)',
-    border: 'none',
-    color: 'white',
+    border: '1px solid rgba(255,107,107,0.3)',
+    color: '#ff6b6b',
     padding: '6px 14px',
     borderRadius: '8px',
     fontSize: '13px',
@@ -800,6 +853,84 @@ const styles = {
     fontSize: '12px',
     cursor: 'pointer',
     transition: 'all 0.2s'
+  },
+  overlay: {
+    position: 'fixed',
+    top: 0, left: 0, right: 0, bottom: 0,
+    background: 'rgba(0,0,0,0.7)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1000,
+    backdropFilter: 'blur(6px)'
+  },
+  exitModal: {
+    background: '#1a1a2e',
+    border: '1px solid rgba(255,255,255,0.1)',
+    borderRadius: '24px',
+    padding: '40px',
+    width: '100%',
+    maxWidth: '420px',
+    textAlign: 'center',
+    animation: 'modalIn 0.3s ease-out',
+    boxShadow: '0 25px 60px rgba(0,0,0,0.5)'
+  },
+  exitIcon: {
+    fontSize: '52px',
+    marginBottom: '16px'
+  },
+  exitTitle: {
+    fontSize: '22px',
+    fontWeight: '700',
+    color: 'white',
+    margin: '0 0 12px'
+  },
+  exitDesc: {
+    fontSize: '14px',
+    color: '#aaa',
+    margin: '0 0 20px',
+    lineHeight: '1.6'
+  },
+  exitWarningBox: {
+    background: 'rgba(239,68,68,0.1)',
+    border: '1px solid rgba(239,68,68,0.3)',
+    borderRadius: '12px',
+    padding: '12px 16px',
+    marginBottom: '24px'
+  },
+  exitWarningText: {
+    fontSize: '13px',
+    color: '#ef4444',
+    margin: 0
+  },
+  exitActions: {
+    display: 'flex',
+    gap: '12px'
+  },
+  stayBtn: {
+    flex: 1,
+    padding: '12px',
+    background: 'linear-gradient(135deg, #4fc3f7, #0288d1)',
+    border: 'none',
+    borderRadius: '12px',
+    fontSize: '14px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    color: 'white',
+    transition: 'all 0.3s',
+    boxShadow: '0 4px 15px rgba(79,195,247,0.3)'
+  },
+  leaveBtn: {
+    flex: 1,
+    padding: '12px',
+    background: '#ef4444',
+    border: 'none',
+    borderRadius: '12px',
+    fontSize: '14px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    color: 'white',
+    transition: 'all 0.3s'
   }
 };
 
