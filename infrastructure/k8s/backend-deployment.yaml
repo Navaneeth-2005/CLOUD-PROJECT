@@ -23,7 +23,7 @@ spec:
         - containerPort: 5000
         env:
         - name: FRONTEND_URL
-          value: "http://codestorm-frontend-673515369025.s3-website.ap-south-1.amazonaws.com"
+          value: "https://main.d12fcuor69h74.amplifyapp.com"
         envFrom:
         - secretRef:
             name: codestorm-secrets
