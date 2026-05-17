@@ -13,6 +13,27 @@ const initSocket = (io) => {
 
       console.log(`🚪 User "${name}" (${role}) joined interview room: ${token}`);
 
+      // Fetch all existing users already in this room
+      const room = io.sockets.adapter.rooms.get(token);
+      const activeUsers = [];
+      if (room) {
+        for (const clientId of room) {
+          if (clientId !== socket.id) {
+            const clientSocket = io.sockets.sockets.get(clientId);
+            if (clientSocket) {
+              activeUsers.push({
+                id: clientSocket.id,
+                name: clientSocket.userName || 'Guest',
+                role: clientSocket.userRole || 'candidate'
+              });
+            }
+          }
+        }
+      }
+
+      // Send the list of existing users to the newly joined user
+      socket.emit('room-users', { users: activeUsers });
+
       // Broadcast join notification to other users in the room
       socket.to(token).emit('user-joined', { id: socket.id, name, role });
     });

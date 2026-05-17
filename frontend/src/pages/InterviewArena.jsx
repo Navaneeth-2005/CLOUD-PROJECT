@@ -19,8 +19,16 @@ const InterviewArena = () => {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const [joined, setJoined] = useState(false);
-  const [displayName, setDisplayName] = useState(user?.name || '');
-  const [role, setRole] = useState(user?.role || 'candidate');
+  const [displayName, setDisplayName] = useState('');
+  const [role, setRole] = useState('candidate');
+
+  // Sync auth state when user loads to fix race condition
+  useEffect(() => {
+    if (user) {
+      setDisplayName(user.name || '');
+      setRole(user.role || 'candidate');
+    }
+  }, [user]);
 
   // Collaborative Notepad state
   const [notepadContent, setNotepadContent] = useState('');
@@ -36,6 +44,7 @@ const InterviewArena = () => {
   const peerConnectionRef = useRef(null);
   const remoteAudioRef = useRef(null);
   const timerIntervalRef = useRef(null);
+  const textareaRef = useRef(null);
 
   // 1. Fetch Session Details on Load
   useEffect(() => {
@@ -117,6 +126,25 @@ const InterviewArena = () => {
     // Notepad Updates Sync
     socket.on('notepad-update', ({ content }) => {
       setNotepadContent(content);
+    });
+
+    // Cursor/Selection sync listener
+    socket.on('cursor-update', ({ id, selectionRange }) => {
+      if (textareaRef.current && selectionRange) {
+        // Prevent infinite loops by verifying selections differ
+        if (
+          textareaRef.current.selectionStart !== selectionRange.start ||
+          textareaRef.current.selectionEnd !== selectionRange.end
+        ) {
+          textareaRef.current.selectionStart = selectionRange.start;
+          textareaRef.current.selectionEnd = selectionRange.end;
+        }
+      }
+    });
+
+    // Sync already connected users in the room
+    socket.on('room-users', ({ users }) => {
+      setPeers(users);
     });
 
     // Real-time Interview Management Sync
@@ -237,6 +265,19 @@ const InterviewArena = () => {
       socketRef.current.emit('notepad-change', {
         token,
         content
+      });
+    }
+  };
+
+  const handleTextareaSelect = (e) => {
+    const start = e.target.selectionStart;
+    const end = e.target.selectionEnd;
+    if (socketRef.current) {
+      socketRef.current.emit('cursor-move', {
+        token,
+        cursorPosition: start,
+        selectionRange: { start, end },
+        name: displayName
       });
     }
   };
@@ -507,8 +548,10 @@ const InterviewArena = () => {
             
             {/* Real-time sync textarea */}
             <textarea
+              ref={textareaRef}
               value={notepadContent}
               onChange={handleNotepadChange}
+              onSelect={handleTextareaSelect}
               style={styles.textarea}
               placeholder="// Welcome to your collaborative interview scratchpad!
 // Start jotting down details, outlining logic, or explaining algorithms here.
