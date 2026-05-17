@@ -796,340 +796,198 @@ const CompanyDashboard = () => {
 
 const styles = {
   page: {
-    minHeight: 'calc(100vh - 65px)',
-    background: '#f0f4f8'
+    minHeight: 'calc(100vh - 66px)',
+    background: 'transparent',
+    fontFamily: "'Outfit', sans-serif",
   },
   header: {
-    background: 'linear-gradient(135deg, #0f0c29, #302b63)',
-    padding: '40px 40px 30px',
-    color: 'white'
+    padding: '40px 40px 32px',
+    background: 'linear-gradient(135deg, rgba(124,58,237,0.12) 0%, rgba(6,182,212,0.07) 100%)',
+    borderBottom: '1px solid rgba(139,92,246,0.18)',
+    position: 'relative', overflow: 'hidden',
   },
   headerContent: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '30px',
-    maxWidth: '1200px',
-    margin: '0 auto 30px'
+    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+    maxWidth: 1200, margin: '0 auto 28px',
   },
   headerTitle: {
-    fontSize: '28px',
-    fontWeight: '700',
-    margin: '0 0 6px'
+    fontSize: 30, fontWeight: 800, margin: '0 0 6px',
+    background: 'linear-gradient(135deg, #ffffff 0%, #a855f7 100%)',
+    WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
   },
-  headerSub: {
-    fontSize: '14px',
-    color: 'rgba(255,255,255,0.7)',
-    margin: 0
-  },
+  headerSub: { fontSize: 14, color: '#64748b', margin: 0 },
   createBtn: {
-    background: 'linear-gradient(135deg, #4fc3f7, #0288d1)',
-    color: 'white',
-    border: 'none',
-    padding: '12px 24px',
-    borderRadius: '12px',
-    fontSize: '14px',
-    fontWeight: '600',
-    cursor: 'pointer',
-    transition: 'all 0.3s',
-    boxShadow: '0 4px 15px rgba(79,195,247,0.4)'
+    background: 'linear-gradient(135deg, #7c3aed, #06b6d4)',
+    color: '#fff', border: 'none',
+    padding: '12px 24px', borderRadius: 12,
+    fontSize: 14, fontWeight: 700, cursor: 'pointer',
+    boxShadow: '0 6px 24px rgba(124,58,237,0.45)',
+    transition: 'all 0.3s cubic-bezier(0.4,0,0.2,1)',
+    fontFamily: "'Outfit', sans-serif",
   },
   diagnosticsBtn: {
-    background: 'rgba(255, 255, 255, 0.1)',
+    background: 'rgba(139,92,246,0.1)',
     backdropFilter: 'blur(10px)',
-    border: '1px solid rgba(255, 255, 255, 0.25)',
-    color: 'white',
-    padding: '12px 24px',
-    borderRadius: '12px',
-    fontSize: '14px',
-    fontWeight: '600',
-    cursor: 'pointer',
-    transition: 'all 0.3s'
+    border: '1px solid rgba(139,92,246,0.3)',
+    color: '#a855f7', padding: '12px 24px', borderRadius: 12,
+    fontSize: 14, fontWeight: 600, cursor: 'pointer',
+    transition: 'all 0.3s', fontFamily: "'Outfit', sans-serif",
   },
   statsRow: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(4, 1fr)',
-    gap: '16px',
-    maxWidth: '1200px',
-    margin: '0 auto'
+    display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
+    gap: 14, maxWidth: 1200, margin: '0 auto',
   },
   statCard: {
-    background: 'rgba(255,255,255,0.1)',
-    backdropFilter: 'blur(10px)',
-    borderRadius: '16px',
-    padding: '20px',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '16px',
-    border: '1px solid rgba(255,255,255,0.15)'
+    background: 'rgba(26,26,46,0.7)',
+    backdropFilter: 'blur(12px)',
+    border: '1px solid rgba(139,92,246,0.2)',
+    borderRadius: 16, padding: '18px 20px',
+    display: 'flex', alignItems: 'center', gap: 14,
+    transition: 'all 0.3s ease',
   },
-  statIcon: { fontSize: '28px' },
-  statValue: {
-    fontSize: '24px',
-    fontWeight: '700',
-    color: 'white',
-    margin: 0
-  },
-  statLabel: {
-    fontSize: '12px',
-    color: 'rgba(255,255,255,0.7)',
-    margin: 0
-  },
-  content: {
-    maxWidth: '1200px',
-    margin: '0 auto',
-    padding: '40px'
-  },
+  statIcon: { fontSize: 28 },
+  statValue: { fontSize: 24, fontWeight: 800, color: '#fff', margin: 0 },
+  statLabel: { fontSize: 12, color: '#64748b', margin: 0, textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600 },
+  content: { maxWidth: 1200, margin: '0 auto', padding: '36px 40px' },
   sectionTitle: {
-    fontSize: '20px',
-    fontWeight: '700',
-    color: '#1a1a2e',
-    marginBottom: '24px'
+    fontSize: 20, fontWeight: 800, color: '#f1f5f9',
+    marginBottom: 20,
+    display: 'flex', alignItems: 'center', gap: 10,
   },
   grid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))',
-    gap: '24px'
+    gap: 24,
   },
   card: {
-    background: 'white',
-    borderRadius: '20px',
-    padding: '24px',
-    transition: 'all 0.3s ease',
-    cursor: 'pointer',
-    border: '1px solid #f0f0f0'
+    background: 'rgba(22,22,42,0.85)',
+    backdropFilter: 'blur(16px)',
+    WebkitBackdropFilter: 'blur(16px)',
+    border: '1px solid rgba(139,92,246,0.2)',
+    borderRadius: 22, padding: '26px',
+    transition: 'all 0.35s cubic-bezier(0.4,0,0.2,1)',
+    cursor: 'pointer', transformStyle: 'preserve-3d',
   },
   cardTop: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '16px'
+    display: 'flex', justifyContent: 'space-between',
+    alignItems: 'center', marginBottom: 16,
   },
   statusBadge: {
-    fontSize: '12px',
-    fontWeight: '600',
-    padding: '4px 12px',
-    borderRadius: '20px'
+    fontSize: 12, fontWeight: 700,
+    padding: '4px 12px', borderRadius: 20, letterSpacing: '0.3px',
   },
   questionCount: {
-    fontSize: '12px',
-    color: '#888',
-    background: '#f5f5f5',
-    padding: '4px 10px',
-    borderRadius: '20px'
+    fontSize: 12, color: '#94a3b8',
+    background: 'rgba(255,255,255,0.06)',
+    padding: '4px 10px', borderRadius: 20,
   },
-  cardTitle: {
-    fontSize: '18px',
-    fontWeight: '700',
-    color: '#1a1a2e',
-    margin: '0 0 8px'
-  },
-  cardDesc: {
-    fontSize: '13px',
-    color: '#888',
-    margin: '0 0 20px',
-    lineHeight: '1.5'
-  },
+  cardTitle: { fontSize: 18, fontWeight: 800, color: '#ffffff', margin: '0 0 8px', lineHeight: '1.3' },
+  cardDesc: { fontSize: 13, color: '#94a3b8', margin: '0 0 20px', lineHeight: '1.65' },
   cardDates: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '16px',
-    padding: '16px',
-    background: '#f8f9fa',
-    borderRadius: '12px',
-    marginBottom: '20px'
+    display: 'flex', alignItems: 'center', gap: 16,
+    padding: '13px 16px',
+    background: 'rgba(124,58,237,0.06)',
+    border: '1px solid rgba(139,92,246,0.15)',
+    borderRadius: 12, marginBottom: 20,
   },
-  dateItem: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '2px',
-    flex: 1
-  },
-  dateLabel: {
-    fontSize: '11px',
-    color: '#aaa',
-    textTransform: 'uppercase',
-    letterSpacing: '0.5px'
-  },
-  dateValue: {
-    fontSize: '12px',
-    fontWeight: '600',
-    color: '#333'
-  },
-  dateDivider: {
-    width: '1px',
-    height: '30px',
-    background: '#e0e0e0'
-  },
-  cardActions: {
-    display: 'flex',
-    gap: '10px'
-  },
+  dateItem: { display: 'flex', flexDirection: 'column', gap: 3, flex: 1 },
+  dateLabel: { fontSize: 10, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: 700 },
+  dateValue: { fontSize: 12, fontWeight: 700, color: '#e2e8f0' },
+  dateDivider: { width: 1, height: 30, background: 'rgba(139,92,246,0.2)' },
+  cardActions: { display: 'flex', gap: 10 },
   actionBtn: {
-    flex: 1,
-    padding: '10px',
-    background: 'white',
-    border: '1px solid #e0e0e0',
-    borderRadius: '10px',
-    fontSize: '13px',
-    fontWeight: '500',
-    cursor: 'pointer',
-    transition: 'all 0.2s',
-    color: '#333'
+    flex: 1, padding: '10px',
+    border: '1px solid rgba(139,92,246,0.25)',
+    borderRadius: 10, fontSize: 13, fontWeight: 700,
+    cursor: 'pointer', background: 'rgba(255,255,255,0.05)',
+    color: '#94a3b8', transition: 'all 0.2s ease',
+    fontFamily: "'Outfit', sans-serif",
   },
   actionBtnPrimary: {
-    flex: 1,
-    padding: '10px',
-    background: 'linear-gradient(135deg, #4fc3f7, #0288d1)',
-    border: 'none',
-    borderRadius: '10px',
-    fontSize: '13px',
-    fontWeight: '600',
-    cursor: 'pointer',
-    transition: 'all 0.3s',
-    color: 'white'
+    flex: 1, padding: '10px',
+    background: 'linear-gradient(135deg, #7c3aed, #06b6d4)',
+    border: 'none', borderRadius: 10,
+    fontSize: 13, fontWeight: 700, cursor: 'pointer',
+    color: '#fff', transition: 'all 0.3s ease',
+    fontFamily: "'Outfit', sans-serif",
+    boxShadow: '0 4px 16px rgba(124,58,237,0.35)',
   },
   loadingGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))',
-    gap: '24px'
+    gap: 24,
   },
   skeletonCard: {
-    background: 'white',
-    borderRadius: '20px',
-    padding: '24px',
-    animation: 'pulse 1.5s ease-in-out infinite'
+    background: 'rgba(26,26,46,0.5)',
+    border: '1px solid rgba(139,92,246,0.1)',
+    borderRadius: 20, padding: 24,
+    animation: 'pulse 1.5s ease-in-out infinite',
   },
-  skeletonTitle: {
-    height: '20px',
-    background: '#e0e0e0',
-    borderRadius: '8px',
-    marginBottom: '12px',
-    width: '60%'
-  },
-  skeletonText: {
-    height: '14px',
-    background: '#e0e0e0',
-    borderRadius: '8px',
-    marginBottom: '8px',
-    width: '80%'
-  },
+  skeletonTitle: { height: 20, background: 'rgba(139,92,246,0.1)', borderRadius: 8, marginBottom: 12, width: '60%' },
+  skeletonText:  { height: 14, background: 'rgba(139,92,246,0.07)', borderRadius: 8, marginBottom: 8, width: '80%' },
   empty: {
-    textAlign: 'center',
-    padding: '80px 20px',
-    background: 'white',
-    borderRadius: '20px'
+    textAlign: 'center', padding: '80px 20px',
+    background: 'rgba(22,22,42,0.7)', backdropFilter: 'blur(12px)',
+    border: '1px solid rgba(139,92,246,0.18)', borderRadius: 22,
   },
-  emptyIcon: { fontSize: '60px', marginBottom: '16px' },
-  emptyTitle: {
-    fontSize: '20px',
-    fontWeight: '700',
-    color: '#1a1a2e',
-    margin: '0 0 8px'
-  },
-  emptySub: {
-    fontSize: '14px',
-    color: '#888',
-    margin: '0 0 24px'
-  },
+  emptyIcon: { fontSize: 60, marginBottom: 16 },
+  emptyTitle: { fontSize: 20, fontWeight: 800, color: '#f1f5f9', margin: '0 0 8px' },
+  emptySub: { fontSize: 14, color: '#64748b', margin: '0 0 24px' },
   overlay: {
-    position: 'fixed',
-    top: 0, left: 0, right: 0, bottom: 0,
-    background: 'rgba(0,0,0,0.6)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 1000,
-    backdropFilter: 'blur(4px)'
+    position: 'fixed', inset: 0,
+    background: 'rgba(0,0,0,0.85)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    zIndex: 1000, backdropFilter: 'blur(10px)',
   },
   modal: {
-    background: 'white',
-    borderRadius: '24px',
-    padding: '36px',
-    width: '100%',
-    maxWidth: '560px',
-    animation: 'modalIn 0.3s ease-out',
-    boxShadow: '0 25px 60px rgba(0,0,0,0.3)'
+    background: 'rgba(14,14,26,0.97)',
+    backdropFilter: 'blur(24px)',
+    border: '1px solid rgba(139,92,246,0.35)',
+    borderRadius: 24, padding: '36px',
+    width: '100%', maxWidth: 560,
+    animation: 'fadeInScale 0.4s cubic-bezier(0.16,1,0.3,1)',
+    boxShadow: '0 30px 80px rgba(0,0,0,0.8)',
   },
   modalHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '28px'
+    display: 'flex', justifyContent: 'space-between',
+    alignItems: 'center', marginBottom: 28,
   },
-  modalTitle: {
-    fontSize: '20px',
-    fontWeight: '700',
-    color: '#1a1a2e',
-    margin: 0
-  },
+  modalTitle: { fontSize: 20, fontWeight: 800, color: '#f1f5f9', margin: 0 },
   closeBtn: {
-    width: '32px',
-    height: '32px',
-    border: 'none',
-    background: '#f5f5f5',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    fontSize: '14px',
-    transition: 'all 0.2s'
+    width: 32, height: 32, border: 'none',
+    background: 'rgba(255,255,255,0.06)',
+    borderRadius: 8, cursor: 'pointer',
+    fontSize: 14, color: '#94a3b8',
+    transition: 'all 0.2s', fontFamily: "'Outfit', sans-serif",
   },
-  modalForm: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '20px'
-  },
-  field: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '8px'
-  },
-  label: {
-    fontSize: '13px',
-    fontWeight: '600',
-    color: '#444'
-  },
+  modalForm: { display: 'flex', flexDirection: 'column', gap: 18 },
+  field: { display: 'flex', flexDirection: 'column', gap: 7 },
+  label: { fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.8px' },
   input: {
     padding: '12px 16px',
-    border: '2px solid #e0e0e0',
-    borderRadius: '12px',
-    fontSize: '14px',
-    outline: 'none',
-    transition: 'border 0.2s',
-    color: '#333'
+    border: '1.5px solid rgba(139,92,246,0.25)',
+    borderRadius: 12, fontSize: 14, outline: 'none',
+    color: '#f1f5f9', background: 'rgba(255,255,255,0.04)',
+    transition: 'border 0.25s ease', fontFamily: "'Outfit', sans-serif",
   },
-  dateRow: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: '16px'
-  },
-  modalActions: {
-    display: 'flex',
-    gap: '12px',
-    marginTop: '8px'
-  },
+  dateRow: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 },
+  modalActions: { display: 'flex', gap: 12, marginTop: 8 },
   cancelBtn: {
-    flex: 1,
-    padding: '12px',
-    background: '#f5f5f5',
-    border: 'none',
-    borderRadius: '12px',
-    fontSize: '14px',
-    fontWeight: '500',
-    cursor: 'pointer',
-    color: '#666'
+    flex: 1, padding: '12px',
+    background: 'rgba(255,255,255,0.05)',
+    border: '1px solid rgba(255,255,255,0.1)',
+    borderRadius: 12, fontSize: 14, fontWeight: 600,
+    cursor: 'pointer', color: '#94a3b8',
+    fontFamily: "'Outfit', sans-serif",
   },
   submitBtn: {
-    flex: 1,
-    padding: '12px',
-    background: 'linear-gradient(135deg, #4fc3f7, #0288d1)',
-    border: 'none',
-    borderRadius: '12px',
-    fontSize: '14px',
-    fontWeight: '600',
-    cursor: 'pointer',
-    color: 'white',
-    boxShadow: '0 4px 15px rgba(79,195,247,0.4)'
-  }
+    flex: 1, padding: '12px',
+    background: 'linear-gradient(135deg, #7c3aed, #06b6d4)',
+    border: 'none', borderRadius: 12,
+    fontSize: 14, fontWeight: 700, cursor: 'pointer',
+    color: '#fff', boxShadow: '0 4px 20px rgba(124,58,237,0.4)',
+    fontFamily: "'Outfit', sans-serif",
+  },
 };
 
 export default CompanyDashboard;

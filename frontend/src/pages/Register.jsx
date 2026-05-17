@@ -1,26 +1,32 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import API from '../api/axios';
 
 const Register = () => {
-  const [form, setForm] = useState({
-    name: '', email: '', password: '', role: 'candidate'
-  });
+  const [form, setForm] = useState({ name: '', email: '', password: '', role: 'candidate' });
   const [loading, setLoading] = useState(false);
   const [focusedField, setFocusedField] = useState('');
+  const [tilt, setTilt] = useState({ x: 0, y: 0 });
+  const cardRef = useRef(null);
   const navigate = useNavigate();
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+
+  const handleMouseMove = (e) => {
+    const rect = cardRef.current.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width - 0.5;
+    const y = (e.clientY - rect.top) / rect.height - 0.5;
+    setTilt({ x: y * 10, y: x * -10 });
   };
+  const handleMouseLeave = () => setTilt({ x: 0, y: 0 });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
       await API.post('/auth/register', form);
-      toast.success('Registered successfully! Please login.');
+      toast.success('Registered! Please login.');
       navigate('/login');
     } catch (err) {
       toast.error(err.response?.data?.message || 'Registration failed');
@@ -29,107 +35,80 @@ const Register = () => {
     }
   };
 
-  const inputStyle = (field) => ({
-    ...styles.inputWrapper,
-    border: focusedField === field ? '2px solid #4fc3f7' : '2px solid #e0e0e0'
+  const inputBox = (field) => ({
+    ...s.inputBox,
+    borderColor: focusedField === field ? '#7c3aed' : 'rgba(139,92,246,0.25)',
+    boxShadow: focusedField === field ? '0 0 0 3px rgba(124,58,237,0.2)' : 'none',
   });
 
   return (
-    <div style={styles.container}>
-      <div style={styles.background}>
-        <div style={styles.circle1} />
-        <div style={styles.circle2} />
-      </div>
+    <div style={s.page}>
+      <div style={s.orb1} />
+      <div style={s.orb2} />
+      <div style={s.grid} />
 
-      <div style={styles.card}>
-        <div style={styles.logoSection}>
-          <div style={styles.logoIcon}>CS</div>
-          <h1 style={styles.logoText}>Create Account</h1>
-          <p style={styles.subtitle}>Join CodeStorm  today</p>
+      <div
+        ref={cardRef}
+        style={{
+          ...s.card,
+          transform: `perspective(900px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg) translateZ(16px)`,
+        }}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+      >
+        <div style={s.header}>
+          <div style={s.logoIcon}>⚡</div>
+          <h1 style={s.title}>Create Account</h1>
+          <p style={s.subtitle}>Join the CodeStorm arena</p>
         </div>
 
-        <form onSubmit={handleSubmit} style={styles.form}>
-          <div style={styles.field}>
-            <label style={styles.label}>Full Name</label>
-            <div style={inputStyle('name')}>
-              <span style={styles.inputIcon}>👤</span>
-              <input
-                type="text"
-                name="name"
-                value={form.name}
-                onChange={handleChange}
-                onFocus={() => setFocusedField('name')}
-                onBlur={() => setFocusedField('')}
-                style={styles.input}
-                placeholder="Enter your full name"
-                required
-              />
+        <form onSubmit={handleSubmit} style={s.form}>
+          {[
+            { key: 'name',     type: 'text',     icon: '👤', label: 'Full Name',      placeholder: 'Your full name' },
+            { key: 'email',    type: 'email',    icon: '✉️',  label: 'Email Address',  placeholder: 'you@example.com' },
+            { key: 'password', type: 'password', icon: '🔑', label: 'Password',        placeholder: '••••••••' },
+          ].map(({ key, type, icon, label, placeholder }) => (
+            <div key={key} style={s.field}>
+              <label style={s.label}>{label}</label>
+              <div style={inputBox(key)}>
+                <span style={s.inputIcon}>{icon}</span>
+                <input
+                  type={type} name={key} value={form[key]}
+                  onChange={handleChange}
+                  onFocus={() => setFocusedField(key)}
+                  onBlur={() => setFocusedField('')}
+                  style={s.input} placeholder={placeholder} required
+                />
+              </div>
             </div>
-          </div>
+          ))}
 
-          <div style={styles.field}>
-            <label style={styles.label}>Email Address</label>
-            <div style={inputStyle('email')}>
-              <span style={styles.inputIcon}>✉</span>
-              <input
-                type="email"
-                name="email"
-                value={form.email}
-                onChange={handleChange}
-                onFocus={() => setFocusedField('email')}
-                onBlur={() => setFocusedField('')}
-                style={styles.input}
-                placeholder="Enter your email"
-                required
-              />
-            </div>
-          </div>
-
-          <div style={styles.field}>
-            <label style={styles.label}>Password</label>
-            <div style={inputStyle('password')}>
-              <span style={styles.inputIcon}>🔒</span>
-              <input
-                type="password"
-                name="password"
-                value={form.password}
-                onChange={handleChange}
-                onFocus={() => setFocusedField('password')}
-                onBlur={() => setFocusedField('')}
-                style={styles.input}
-                placeholder="Enter your password"
-                required
-              />
-            </div>
-          </div>
-
-          <div style={styles.field}>
-            <label style={styles.label}>Register as</label>
-            <div style={styles.roleContainer}>
-              {['candidate', 'company'].map(r => (
+          {/* Role selector */}
+          <div style={s.field}>
+            <label style={s.label}>Register As</label>
+            <div style={s.roleRow}>
+              {[
+                { id: 'candidate', icon: '👨‍💻', label: 'Candidate' },
+                { id: 'company',   icon: '🏢',   label: 'Company' },
+              ].map(({ id, icon, label }) => (
                 <div
-                  key={r}
-                  onClick={() => setForm({ ...form, role: r })}
+                  key={id}
+                  onClick={() => setForm({ ...form, role: id })}
                   style={{
-                    ...styles.roleCard,
-                    border: form.role === r
-                      ? '2px solid #4fc3f7'
-                      : '2px solid #e0e0e0',
-                    background: form.role === r
-                      ? 'linear-gradient(135deg, #e3f7ff, #f0fbff)'
-                      : 'white'
+                    ...s.roleCard,
+                    borderColor: form.role === id ? '#7c3aed' : 'rgba(139,92,246,0.2)',
+                    background: form.role === id
+                      ? 'linear-gradient(135deg, rgba(124,58,237,0.2), rgba(6,182,212,0.1))'
+                      : 'rgba(255,255,255,0.03)',
+                    boxShadow: form.role === id ? '0 0 20px rgba(124,58,237,0.3)' : 'none',
+                    transform: form.role === id ? 'scale(1.04)' : 'scale(1)',
                   }}
                 >
-                  <span style={styles.roleIcon}>
-                    {r === 'candidate' ? '👨‍💻' : '🏢'}
-                  </span>
+                  <span style={{ fontSize: 28 }}>{icon}</span>
                   <span style={{
-                    ...styles.roleLabel,
-                    color: form.role === r ? '#0288d1' : '#666',
-                    fontWeight: form.role === r ? '600' : '400'
-                  }}>
-                    {r.charAt(0).toUpperCase() + r.slice(1)}
-                  </span>
+                    fontSize: 13, fontWeight: 700,
+                    color: form.role === id ? '#a855f7' : '#64748b',
+                  }}>{label}</span>
                 </div>
               ))}
             </div>
@@ -137,177 +116,124 @@ const Register = () => {
 
           <button
             type="submit"
-            style={{
-              ...styles.btn,
-              opacity: loading ? 0.7 : 1
-            }}
+            style={{ ...s.btn, opacity: loading ? 0.75 : 1 }}
             disabled={loading}
-            onMouseEnter={e => e.target.style.background = 'linear-gradient(135deg, #0288d1, #26c6da)'}
-            onMouseLeave={e => e.target.style.background = 'linear-gradient(135deg, #4fc3f7, #0288d1)'}
+            onMouseEnter={e => {
+              e.currentTarget.style.transform = 'translateY(-3px) scale(1.02)';
+              e.currentTarget.style.boxShadow = '0 20px 50px rgba(124,58,237,0.6)';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.transform = 'translateY(0) scale(1)';
+              e.currentTarget.style.boxShadow = '0 8px 30px rgba(124,58,237,0.4)';
+            }}
           >
-            {loading ? 'Creating account...' : 'Create Account'}
+            {loading ? <><span style={s.spinner} /> Creating...</> : '✨ Create Account'}
           </button>
         </form>
 
-        <p style={styles.bottom}>
+        <p style={s.footer}>
           Already have an account?{' '}
-          <Link to="/login" style={styles.linkText}>Login here</Link>
+          <Link to="/login" style={s.link}>Sign in →</Link>
         </p>
       </div>
 
       <style>{`
-        @keyframes float1 {
-          0%, 100% { transform: translateY(0px) rotate(0deg); }
-          50% { transform: translateY(-30px) rotate(180deg); }
-        }
-        @keyframes float2 {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-20px); }
-        }
-        @keyframes slideUp {
-          from { opacity: 0; transform: translateY(40px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
+        @keyframes orb1 { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(40px,-60px) scale(1.1)} }
+        @keyframes orb2 { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(-50px,40px) scale(0.9)} }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes cardIn { from{opacity:0;transform:perspective(900px) translateY(50px) scale(0.94)} to{opacity:1;transform:perspective(900px) translateY(0) scale(1)} }
       `}</style>
     </div>
   );
 };
 
-const styles = {
-  container: {
-    minHeight: 'calc(100vh - 60px)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    background: 'linear-gradient(135deg, #0f0c29, #302b63, #24243e)',
-    position: 'relative',
-    overflow: 'hidden'
+const s = {
+  page: {
+    minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+    background: '#080810', position: 'relative', overflow: 'hidden',
+    fontFamily: "'Outfit', sans-serif",
   },
-  background: {
-    position: 'absolute',
-    width: '100%',
-    height: '100%',
-    top: 0,
-    left: 0
+  orb1: {
+    position: 'absolute', width: 500, height: 500, borderRadius: '50%',
+    background: 'radial-gradient(circle, rgba(124,58,237,0.18) 0%, transparent 70%)',
+    top: -150, right: -100, animation: 'orb1 12s ease-in-out infinite', pointerEvents: 'none',
   },
-  circle1: {
-    position: 'absolute',
-    width: '400px',
-    height: '400px',
-    borderRadius: '50%',
-    background: 'rgba(79,195,247,0.08)',
-    top: '-100px',
-    right: '-100px',
-    animation: 'float1 8s ease-in-out infinite'
+  orb2: {
+    position: 'absolute', width: 400, height: 400, borderRadius: '50%',
+    background: 'radial-gradient(circle, rgba(6,182,212,0.14) 0%, transparent 70%)',
+    bottom: -120, left: -80, animation: 'orb2 16s ease-in-out infinite', pointerEvents: 'none',
   },
-  circle2: {
-    position: 'absolute',
-    width: '300px',
-    height: '300px',
-    borderRadius: '50%',
-    background: 'rgba(79,195,247,0.06)',
-    bottom: '-80px',
-    left: '-80px',
-    animation: 'float2 10s ease-in-out infinite'
+  grid: {
+    position: 'absolute', inset: 0, pointerEvents: 'none',
+    backgroundImage: 'linear-gradient(rgba(139,92,246,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(139,92,246,0.04) 1px,transparent 1px)',
+    backgroundSize: '44px 44px',
   },
   card: {
-    background: 'rgba(255,255,255,0.97)',
-    padding: '50px 40px',
-    borderRadius: '24px',
-    width: '100%',
-    maxWidth: '440px',
-    position: 'relative',
-    zIndex: 1,
-    animation: 'slideUp 0.5s ease-out',
-    boxShadow: '0 25px 60px rgba(0,0,0,0.4)'
+    position: 'relative', zIndex: 10,
+    width: '100%', maxWidth: 460,
+    background: 'rgba(14,14,26,0.88)',
+    backdropFilter: 'blur(24px)',
+    WebkitBackdropFilter: 'blur(24px)',
+    border: '1px solid rgba(139,92,246,0.35)',
+    borderRadius: 28, padding: '48px 44px',
+    boxShadow: '0 30px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(139,92,246,0.15)',
+    animation: 'cardIn 0.7s cubic-bezier(0.16,1,0.3,1)',
+    transition: 'transform 0.15s ease, box-shadow 0.3s ease',
+    transformStyle: 'preserve-3d',
   },
-  logoSection: {
-    textAlign: 'center',
-    marginBottom: '35px'
-  },
+  header: { textAlign: 'center', marginBottom: 36 },
   logoIcon: {
-    width: '60px',
-    height: '60px',
-    background: 'linear-gradient(135deg, #4fc3f7, #0288d1)',
-    borderRadius: '16px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '22px',
-    fontWeight: 'bold',
-    color: 'white',
-    margin: '0 auto 14px',
-    boxShadow: '0 8px 20px rgba(79,195,247,0.4)'
+    width: 64, height: 64,
+    background: 'linear-gradient(135deg, #7c3aed, #06b6d4)',
+    borderRadius: 20, display: 'flex', alignItems: 'center', justifyContent: 'center',
+    fontSize: 28, margin: '0 auto 14px',
+    boxShadow: '0 0 40px rgba(124,58,237,0.5)',
   },
-  logoText: {
-    fontSize: '22px',
-    fontWeight: '700',
-    color: '#1a1a2e',
-    margin: '0 0 8px'
+  title: {
+    fontSize: 26, fontWeight: 800, margin: '0 0 8px',
+    background: 'linear-gradient(135deg, #fff, #a855f7)',
+    WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
   },
-  subtitle: { fontSize: '14px', color: '#888', margin: 0 },
-  form: { display: 'flex', flexDirection: 'column', gap: '20px' },
-  field: { display: 'flex', flexDirection: 'column', gap: '8px' },
-  label: { fontSize: '13px', fontWeight: '600', color: '#444' },
-  inputWrapper: {
-    display: 'flex',
-    alignItems: 'center',
-    borderRadius: '12px',
-    overflow: 'hidden',
-    transition: 'border 0.2s',
-    background: '#f8f9fa'
+  subtitle: { fontSize: 14, color: '#64748b', margin: 0 },
+  form: { display: 'flex', flexDirection: 'column', gap: 18 },
+  field: { display: 'flex', flexDirection: 'column', gap: 7 },
+  label: { fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1px' },
+  inputBox: {
+    display: 'flex', alignItems: 'center',
+    background: 'rgba(255,255,255,0.04)',
+    border: '1.5px solid rgba(139,92,246,0.25)',
+    borderRadius: 13, overflow: 'hidden', transition: 'all 0.25s ease',
   },
-  inputIcon: { padding: '0 12px', fontSize: '16px', color: '#aaa' },
+  inputIcon: { padding: '0 13px', fontSize: 16 },
   input: {
-    flex: 1,
-    padding: '12px 14px 12px 0',
-    border: 'none',
-    background: 'transparent',
-    fontSize: '14px',
-    outline: 'none',
-    color: '#333'
+    flex: 1, padding: '13px 14px 13px 0',
+    border: 'none', background: 'transparent',
+    fontSize: 15, outline: 'none', color: '#fff',
   },
-  roleContainer: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: '12px'
-  },
+  roleRow: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 },
   roleCard: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    padding: '16px',
-    borderRadius: '12px',
-    cursor: 'pointer',
-    transition: 'all 0.2s',
-    gap: '8px'
+    display: 'flex', flexDirection: 'column', alignItems: 'center',
+    padding: '18px 12px', borderRadius: 14,
+    cursor: 'pointer', border: '1.5px solid rgba(139,92,246,0.2)',
+    transition: 'all 0.3s cubic-bezier(0.4,0,0.2,1)', gap: 8,
   },
-  roleIcon: { fontSize: '28px' },
-  roleLabel: { fontSize: '14px' },
   btn: {
-    padding: '14px',
-    background: 'linear-gradient(135deg, #4fc3f7, #0288d1)',
-    color: 'white',
-    border: 'none',
-    borderRadius: '12px',
-    fontSize: '16px',
-    fontWeight: '600',
-    marginTop: '10px',
-    transition: 'all 0.3s ease',
-    boxShadow: '0 6px 20px rgba(79,195,247,0.4)',
-    cursor: 'pointer'
+    marginTop: 6, padding: '15px',
+    background: 'linear-gradient(135deg, #7c3aed, #06b6d4)',
+    color: '#fff', border: 'none', borderRadius: 14,
+    fontSize: 16, fontWeight: 700,
+    boxShadow: '0 8px 30px rgba(124,58,237,0.4)', cursor: 'pointer',
+    transition: 'all 0.3s cubic-bezier(0.4,0,0.2,1)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+    fontFamily: "'Outfit', sans-serif", letterSpacing: '0.3px',
   },
-  bottom: {
-    textAlign: 'center',
-    marginTop: '24px',
-    fontSize: '14px',
-    color: '#888'
+  spinner: {
+    width: 16, height: 16,
+    border: '2px solid rgba(255,255,255,0.3)', borderTop: '2px solid #fff',
+    borderRadius: '50%', display: 'inline-block', animation: 'spin 0.8s linear infinite',
   },
-  linkText: {
-    color: '#0288d1',
-    textDecoration: 'none',
-    fontWeight: '600'
-  }
+  footer: { textAlign: 'center', marginTop: 26, fontSize: 14, color: '#64748b' },
+  link: { color: '#a855f7', textDecoration: 'none', fontWeight: 700 },
 };
 
 export default Register;

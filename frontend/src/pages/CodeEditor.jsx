@@ -746,493 +746,244 @@ int main() {
 
 const styles = {
   page: {
-    height: '100vh',
-    display: 'flex',
-    flexDirection: 'column',
-    background: '#1e1e1e',
-    overflow: 'hidden'
+    height: '100vh', display: 'flex', flexDirection: 'column',
+    background: '#080810', overflow: 'hidden',
+    fontFamily: "'Outfit', sans-serif",
   },
   topBar: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: '0 20px',
-    height: '55px',
-    background: '#0f0c29',
-    borderBottom: '1px solid rgba(255,255,255,0.1)',
-    flexShrink: 0
+    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+    padding: '0 20px', height: 58,
+    background: 'rgba(8,8,16,0.95)',
+    backdropFilter: 'blur(20px)',
+    borderBottom: '1px solid rgba(139,92,246,0.25)',
+    flexShrink: 0,
+    boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
   },
-  topLeft: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '16px',
-    flex: 1
-  },
+  topLeft: { display: 'flex', alignItems: 'center', gap: 14, flex: 1 },
   backBtn: {
-    background: 'rgba(255,255,255,0.08)',
-    border: '1px solid rgba(255,107,107,0.3)',
-    color: '#ff6b6b',
-    padding: '6px 14px',
-    borderRadius: '8px',
-    fontSize: '13px',
-    cursor: 'pointer',
-    transition: 'all 0.2s'
+    background: 'rgba(239,68,68,0.1)',
+    border: '1px solid rgba(239,68,68,0.35)',
+    color: '#ef4444', padding: '7px 16px', borderRadius: 9,
+    fontSize: 13, fontWeight: 600, cursor: 'pointer',
+    transition: 'all 0.2s', fontFamily: "'Outfit', sans-serif",
   },
-  contestInfo: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px'
-  },
-  contestName: {
-    fontSize: '13px',
-    color: 'rgba(255,255,255,0.6)'
-  },
-  separator: {
-    color: 'rgba(255,255,255,0.3)',
-    fontSize: '16px'
-  },
-  questionName: {
-    fontSize: '13px',
-    color: 'white',
-    fontWeight: '600'
-  },
-  topCenter: {
-    flex: 1,
-    display: 'flex',
-    justifyContent: 'center'
-  },
+  contestInfo: { display: 'flex', alignItems: 'center', gap: 8 },
+  contestName: { fontSize: 13, color: '#64748b', fontWeight: 500 },
+  separator: { color: 'rgba(139,92,246,0.5)', fontSize: 16 },
+  questionName: { fontSize: 13, color: '#e2e8f0', fontWeight: 700 },
+  topCenter: { flex: 1, display: 'flex', justifyContent: 'center' },
   timer: {
-    fontSize: '16px',
-    fontWeight: '700',
-    padding: '6px 20px',
-    borderRadius: '10px',
-    border: '1px solid',
-    fontFamily: 'monospace',
-    letterSpacing: '2px'
+    fontSize: 16, fontWeight: 800, padding: '6px 22px',
+    borderRadius: 10, border: '1px solid',
+    fontFamily: "'JetBrains Mono', monospace", letterSpacing: '2px',
   },
-  topRight: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    flex: 1,
-    justifyContent: 'flex-end'
-  },
+  topRight: { display: 'flex', alignItems: 'center', gap: 10, flex: 1, justifyContent: 'flex-end' },
   langSelect: {
-    background: 'rgba(255,255,255,0.08)',
-    border: '1px solid rgba(255,255,255,0.15)',
-    color: 'white',
-    padding: '7px 14px',
-    borderRadius: '8px',
-    fontSize: '13px',
-    cursor: 'pointer',
-    outline: 'none'
+    background: 'rgba(139,92,246,0.1)',
+    border: '1px solid rgba(139,92,246,0.3)',
+    color: '#e2e8f0', padding: '7px 14px', borderRadius: 9,
+    fontSize: 13, cursor: 'pointer', outline: 'none',
+    fontFamily: "'Outfit', sans-serif", fontWeight: 600,
   },
   submitBtn: {
-    background: 'linear-gradient(135deg, #4fc3f7, #0288d1)',
-    border: 'none',
-    color: 'white',
-    padding: '8px 22px',
-    borderRadius: '10px',
-    fontSize: '14px',
-    fontWeight: '600',
-    cursor: 'pointer',
-    transition: 'all 0.3s',
-    boxShadow: '0 4px 15px rgba(79,195,247,0.3)',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px'
+    background: 'linear-gradient(135deg, #7c3aed, #06b6d4)',
+    border: 'none', color: '#fff', padding: '8px 22px',
+    borderRadius: 10, fontSize: 14, fontWeight: 700,
+    cursor: 'pointer', transition: 'all 0.3s',
+    boxShadow: '0 4px 18px rgba(124,58,237,0.45)',
+    display: 'flex', alignItems: 'center', gap: 8,
+    fontFamily: "'Outfit', sans-serif",
   },
   spinner: {
-    width: '14px',
-    height: '14px',
-    border: '2px solid rgba(255,255,255,0.3)',
-    borderTop: '2px solid white',
-    borderRadius: '50%',
-    display: 'inline-block',
-    animation: 'spin 0.8s linear infinite'
+    width: 14, height: 14,
+    border: '2px solid rgba(255,255,255,0.3)', borderTop: '2px solid #fff',
+    borderRadius: '50%', display: 'inline-block',
+    animation: 'spin 0.8s linear infinite',
   },
   submitContestBtn: {
     background: 'linear-gradient(135deg, #ef4444, #dc2626)',
-    border: 'none',
-    color: 'white',
-    padding: '8px 18px',
-    borderRadius: '10px',
-    fontSize: '13px',
-    fontWeight: '600',
-    cursor: 'pointer',
-    transition: 'all 0.3s',
-    boxShadow: '0 4px 15px rgba(239,68,68,0.3)'
+    border: 'none', color: '#fff', padding: '8px 18px',
+    borderRadius: 10, fontSize: 13, fontWeight: 700,
+    cursor: 'pointer', transition: 'all 0.3s',
+    boxShadow: '0 4px 15px rgba(239,68,68,0.4)',
+    fontFamily: "'Outfit', sans-serif",
   },
-  mainLayout: {
-    display: 'flex',
-    flex: 1,
-    overflow: 'hidden'
-  },
+  mainLayout: { display: 'flex', flex: 1, overflow: 'hidden' },
   leftPanel: {
-    width: '420px',
-    background: '#1a1a2e',
-    borderRight: '1px solid rgba(255,255,255,0.08)',
-    display: 'flex',
-    flexDirection: 'column',
-    overflow: 'hidden',
-    flexShrink: 0
+    width: 430, background: 'rgba(14,14,26,0.95)',
+    borderRight: '1px solid rgba(139,92,246,0.2)',
+    display: 'flex', flexDirection: 'column', overflow: 'hidden', flexShrink: 0,
   },
   questionNav: {
-    display: 'flex',
-    gap: '8px',
-    padding: '12px 16px',
-    borderBottom: '1px solid rgba(255,255,255,0.08)',
-    flexWrap: 'wrap'
+    display: 'flex', gap: 8, padding: '12px 16px',
+    borderBottom: '1px solid rgba(139,92,246,0.15)', flexWrap: 'wrap',
   },
   questionNavBtn: {
-    padding: '6px 14px',
-    border: 'none',
-    borderRadius: '8px',
-    fontSize: '13px',
-    fontWeight: '600',
-    cursor: 'pointer',
-    transition: 'all 0.2s'
+    padding: '6px 14px', border: 'none', borderRadius: 8,
+    fontSize: 13, fontWeight: 700, cursor: 'pointer',
+    transition: 'all 0.2s', fontFamily: "'Outfit', sans-serif",
   },
-  panelTabs: {
-    display: 'flex',
-    borderBottom: '1px solid rgba(255,255,255,0.08)',
-    flexShrink: 0
-  },
+  panelTabs: { display: 'flex', borderBottom: '1px solid rgba(139,92,246,0.15)', flexShrink: 0 },
   panelTab: {
-    flex: 1,
-    padding: '12px',
-    background: 'transparent',
-    border: 'none',
-    fontSize: '13px',
-    fontWeight: '600',
-    cursor: 'pointer',
-    transition: 'all 0.2s'
+    flex: 1, padding: '12px', background: 'transparent', border: 'none',
+    fontSize: 13, fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s',
+    fontFamily: "'Outfit', sans-serif",
   },
-  problemPanel: {
-    flex: 1,
-    overflowY: 'auto',
-    padding: '20px'
-  },
+  problemPanel: { flex: 1, overflowY: 'auto', padding: '20px' },
   problemHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: '16px',
-    gap: '12px'
+    display: 'flex', justifyContent: 'space-between',
+    alignItems: 'flex-start', marginBottom: 16, gap: 12,
   },
-  problemTitle: {
-    fontSize: '18px',
-    fontWeight: '700',
-    color: 'white',
-    margin: 0,
-    flex: 1
-  },
+  problemTitle: { fontSize: 19, fontWeight: 800, color: '#f1f5f9', margin: 0, flex: 1, lineHeight: '1.3' },
   diffBadge: {
-    fontSize: '12px',
-    fontWeight: '600',
-    padding: '4px 12px',
-    borderRadius: '20px',
-    textTransform: 'capitalize',
-    flexShrink: 0
+    fontSize: 12, fontWeight: 700, padding: '4px 12px',
+    borderRadius: 20, textTransform: 'capitalize', flexShrink: 0,
   },
   contestTimeBox: {
-    background: 'rgba(79,195,247,0.08)',
-    border: '1px solid rgba(79,195,247,0.2)',
-    borderRadius: '10px',
-    padding: '10px 14px',
-    marginBottom: '20px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '6px'
+    background: 'rgba(124,58,237,0.08)',
+    border: '1px solid rgba(139,92,246,0.2)',
+    borderRadius: 12, padding: '12px 16px', marginBottom: 20,
+    display: 'flex', flexDirection: 'column', gap: 8,
   },
-  contestTimeItem: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center'
-  },
-  contestTimeLabel: {
-    fontSize: '12px',
-    color: '#4fc3f7',
-    fontWeight: '500'
-  },
-  contestTimeValue: {
-    fontSize: '12px',
-    color: '#ccc',
-    fontWeight: '500'
-  },
-  problemSection: {
-    marginBottom: '20px'
-  },
+  contestTimeItem: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
+  contestTimeLabel: { fontSize: 12, color: '#a855f7', fontWeight: 600 },
+  contestTimeValue: { fontSize: 12, color: '#cbd5e1', fontWeight: 500 },
+  problemSection: { marginBottom: 20 },
   sectionLabel: {
-    fontSize: '12px',
-    fontWeight: '700',
-    color: '#4fc3f7',
-    textTransform: 'uppercase',
-    letterSpacing: '0.8px',
-    margin: '0 0 8px'
+    fontSize: 11, fontWeight: 800, color: '#7c3aed',
+    textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 10px',
   },
-  problemDesc: {
-    fontSize: '14px',
-    color: '#ccc',
-    lineHeight: '1.7',
-    margin: 0
-  },
+  problemDesc: { fontSize: 14, color: '#cbd5e1', lineHeight: '1.8', margin: 0 },
   codeBlock: {
-    background: '#0d1117',
-    borderRadius: '10px',
-    padding: '14px',
-    border: '1px solid rgba(255,255,255,0.08)'
+    background: '#0d0d1a', borderRadius: 10, padding: 14,
+    border: '1px solid rgba(139,92,246,0.2)',
   },
   codeText: {
-    fontSize: '13px',
-    color: '#4fc3f7',
-    fontFamily: 'monospace',
-    margin: 0,
-    whiteSpace: 'pre-wrap'
+    fontSize: 13, color: '#a855f7',
+    fontFamily: "'JetBrains Mono', monospace",
+    margin: 0, whiteSpace: 'pre-wrap',
   },
   marksBadge: {
-    fontSize: '14px',
-    fontWeight: '600',
-    color: '#f59e0b',
-    background: '#fef3c7',
-    padding: '4px 14px',
-    borderRadius: '20px'
+    fontSize: 13, fontWeight: 700, color: '#f59e0b',
+    background: 'rgba(245,158,11,0.12)',
+    border: '1px solid rgba(245,158,11,0.25)',
+    padding: '4px 14px', borderRadius: 20,
   },
   submitNotice: {
-    background: 'rgba(255,255,255,0.04)',
-    border: '1px solid rgba(255,255,255,0.08)',
-    borderRadius: '10px',
-    padding: '14px',
-    marginBottom: '20px'
+    background: 'rgba(124,58,237,0.06)',
+    border: '1px solid rgba(139,92,246,0.15)',
+    borderRadius: 10, padding: 14, marginBottom: 20,
   },
-  submitNoticeText: {
-    fontSize: '13px',
-    color: '#aaa',
-    lineHeight: '1.6',
-    margin: 0
-  },
+  submitNoticeText: { fontSize: 13, color: '#94a3b8', lineHeight: '1.7', margin: 0 },
   code: {
-    background: 'rgba(79,195,247,0.15)',
-    color: '#4fc3f7',
-    padding: '1px 6px',
-    borderRadius: '4px',
-    fontFamily: 'monospace',
-    fontSize: '12px'
+    background: 'rgba(124,58,237,0.15)', color: '#a855f7',
+    padding: '1px 6px', borderRadius: 4,
+    fontFamily: "'JetBrains Mono', monospace", fontSize: 12,
   },
-  resultPanel: {
-    flex: 1,
-    overflowY: 'auto',
-    padding: '20px'
-  },
-  noResult: {
-    textAlign: 'center',
-    padding: '60px 20px'
-  },
-  noResultIcon: {
-    fontSize: '48px',
-    marginBottom: '16px'
-  },
-  noResultText: {
-    fontSize: '14px',
-    color: '#666'
-  },
+  resultPanel: { flex: 1, overflowY: 'auto', padding: '20px' },
+  noResult: { textAlign: 'center', padding: '60px 20px' },
+  noResultIcon: { fontSize: 48, marginBottom: 16 },
+  noResultText: { fontSize: 14, color: '#475569' },
   resultCard: {
-    borderRadius: '16px',
-    padding: '20px',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '16px',
-    marginBottom: '20px'
+    borderRadius: 16, padding: 20,
+    display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20,
   },
-  resultIcon: { fontSize: '32px' },
-  resultStatus: {
-    fontSize: '18px',
-    fontWeight: '700',
-    margin: '0 0 4px'
-  },
-  resultSub: {
-    fontSize: '13px',
-    color: '#888',
-    margin: 0
-  },
+  resultIcon: { fontSize: 32 },
+  resultStatus: { fontSize: 18, fontWeight: 800, margin: '0 0 4px' },
+  resultSub: { fontSize: 13, color: '#64748b', margin: 0 },
   resultDetails: {
-    background: 'rgba(255,255,255,0.04)',
-    borderRadius: '14px',
-    padding: '16px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '12px',
-    border: '1px solid rgba(255,255,255,0.08)',
-    marginBottom: '16px'
+    background: 'rgba(124,58,237,0.06)',
+    borderRadius: 14, padding: 16,
+    display: 'flex', flexDirection: 'column', gap: 12,
+    border: '1px solid rgba(139,92,246,0.15)', marginBottom: 16,
   },
-  resultItem: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center'
-  },
-  resultLabel: {
-    fontSize: '13px',
-    color: '#888'
-  },
-  resultValue: {
-    fontSize: '13px',
-    fontWeight: '600',
-    color: 'white'
-  },
+  resultItem: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
+  resultLabel: { fontSize: 13, color: '#64748b' },
+  resultValue: { fontSize: 13, fontWeight: 700, color: '#f1f5f9' },
   errorBox: {
-    background: '#1a0a0a',
-    borderRadius: '12px',
-    padding: '16px',
-    border: '1px solid #ef444433',
-    marginBottom: '12px'
+    background: 'rgba(239,68,68,0.06)', borderRadius: 12, padding: 16,
+    border: '1px solid rgba(239,68,68,0.2)', marginBottom: 12,
   },
-  errorTitle: {
-    fontSize: '13px',
-    color: '#ef4444',
-    margin: '0 0 10px'
-  },
+  errorTitle: { fontSize: 13, color: '#ef4444', margin: '0 0 10px', fontWeight: 700 },
   errorText: {
-    fontSize: '12px',
-    color: '#ff8080',
-    fontFamily: 'monospace',
-    margin: 0,
-    whiteSpace: 'pre-wrap'
+    fontSize: 12, color: '#fca5a5',
+    fontFamily: "'JetBrains Mono', monospace", margin: 0, whiteSpace: 'pre-wrap',
   },
   errorTip: {
-    marginTop: '12px',
-    fontSize: '12px',
-    color: '#f59e0b',
-    background: 'rgba(245,158,11,0.1)',
+    marginTop: 12, fontSize: 12, color: '#fbbf24',
+    background: 'rgba(245,158,11,0.08)',
     border: '1px solid rgba(245,158,11,0.2)',
-    borderRadius: '8px',
-    padding: '8px 12px',
-    lineHeight: '1.5'
+    borderRadius: 8, padding: '8px 12px', lineHeight: '1.5',
   },
   rejectedTip: {
-    fontSize: '12px',
-    color: '#f59e0b',
-    background: 'rgba(245,158,11,0.1)',
+    fontSize: 12, color: '#fbbf24',
+    background: 'rgba(245,158,11,0.08)',
     border: '1px solid rgba(245,158,11,0.2)',
-    borderRadius: '8px',
-    padding: '10px 12px',
-    lineHeight: '1.5'
+    borderRadius: 8, padding: '10px 12px', lineHeight: '1.5',
   },
-  rightPanel: {
-    flex: 1,
-    display: 'flex',
-    flexDirection: 'column',
-    overflow: 'hidden'
-  },
+  rightPanel: { flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' },
   editorHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
     padding: '10px 16px',
-    background: '#252526',
-    borderBottom: '1px solid rgba(255,255,255,0.08)'
+    background: 'rgba(14,14,26,0.9)',
+    borderBottom: '1px solid rgba(139,92,246,0.15)',
   },
-  editorLeft: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px'
-  },
-  editorLabel: {
-    fontSize: '13px',
-    color: '#ccc',
-    fontWeight: '500'
-  },
+  editorLeft: { display: 'flex', alignItems: 'center', gap: 12 },
+  editorLabel: { fontSize: 13, color: '#94a3b8', fontWeight: 600 },
   editorHint: {
-    fontSize: '11px',
-    color: '#555',
-    background: 'rgba(255,255,255,0.05)',
-    padding: '2px 8px',
-    borderRadius: '4px'
+    fontSize: 11, color: '#475569',
+    background: 'rgba(139,92,246,0.08)',
+    padding: '2px 8px', borderRadius: 4,
+    border: '1px solid rgba(139,92,246,0.15)',
   },
   clearBtn: {
     background: 'transparent',
-    border: '1px solid rgba(255,255,255,0.15)',
-    color: '#aaa',
-    padding: '5px 12px',
-    borderRadius: '6px',
-    fontSize: '12px',
-    cursor: 'pointer',
-    transition: 'all 0.2s'
+    border: '1px solid rgba(139,92,246,0.25)',
+    color: '#64748b', padding: '5px 12px', borderRadius: 6,
+    fontSize: 12, cursor: 'pointer', transition: 'all 0.2s',
+    fontFamily: "'Outfit', sans-serif",
   },
   overlay: {
-    position: 'fixed',
-    top: 0, left: 0, right: 0, bottom: 0,
-    background: 'rgba(0,0,0,0.7)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 1000,
-    backdropFilter: 'blur(6px)'
+    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    zIndex: 1000, backdropFilter: 'blur(10px)',
   },
   exitModal: {
-    background: '#1a1a2e',
-    border: '1px solid rgba(255,255,255,0.1)',
-    borderRadius: '24px',
-    padding: '40px',
-    width: '100%',
-    maxWidth: '420px',
-    textAlign: 'center',
-    animation: 'modalIn 0.3s ease-out',
-    boxShadow: '0 25px 60px rgba(0,0,0,0.5)'
+    background: 'rgba(14,14,26,0.97)',
+    backdropFilter: 'blur(24px)',
+    border: '1px solid rgba(139,92,246,0.35)',
+    borderRadius: 24, padding: '40px',
+    width: '100%', maxWidth: 420, textAlign: 'center',
+    animation: 'fadeInScale 0.4s cubic-bezier(0.16,1,0.3,1)',
+    boxShadow: '0 30px 80px rgba(0,0,0,0.8)',
   },
-  exitIcon: { fontSize: '52px', marginBottom: '16px' },
-  exitTitle: {
-    fontSize: '22px',
-    fontWeight: '700',
-    color: 'white',
-    margin: '0 0 12px'
-  },
-  exitDesc: {
-    fontSize: '14px',
-    color: '#aaa',
-    margin: '0 0 20px',
-    lineHeight: '1.6'
-  },
+  exitIcon: { fontSize: 52, marginBottom: 16 },
+  exitTitle: { fontSize: 22, fontWeight: 800, color: '#f1f5f9', margin: '0 0 12px' },
+  exitDesc: { fontSize: 14, color: '#94a3b8', margin: '0 0 20px', lineHeight: '1.7' },
   exitWarningBox: {
-    background: 'rgba(239,68,68,0.1)',
-    border: '1px solid rgba(239,68,68,0.3)',
-    borderRadius: '12px',
-    padding: '12px 16px',
-    marginBottom: '24px'
+    background: 'rgba(239,68,68,0.08)',
+    border: '1px solid rgba(239,68,68,0.25)',
+    borderRadius: 12, padding: '12px 16px', marginBottom: 24,
   },
-  exitWarningText: {
-    fontSize: '13px',
-    color: '#ef4444',
-    margin: 0
-  },
-  exitActions: {
-    display: 'flex',
-    gap: '12px'
-  },
+  exitWarningText: { fontSize: 13, color: '#ef4444', margin: 0 },
+  exitActions: { display: 'flex', gap: 12 },
   stayBtn: {
-    flex: 1,
-    padding: '12px',
-    background: 'linear-gradient(135deg, #4fc3f7, #0288d1)',
-    border: 'none',
-    borderRadius: '12px',
-    fontSize: '14px',
-    fontWeight: '600',
-    cursor: 'pointer',
-    color: 'white',
-    transition: 'all 0.3s',
-    boxShadow: '0 4px 15px rgba(79,195,247,0.3)'
+    flex: 1, padding: '12px',
+    background: 'linear-gradient(135deg, #7c3aed, #06b6d4)',
+    border: 'none', borderRadius: 12,
+    fontSize: 14, fontWeight: 700, cursor: 'pointer',
+    color: '#fff', transition: 'all 0.3s',
+    boxShadow: '0 4px 18px rgba(124,58,237,0.4)',
+    fontFamily: "'Outfit', sans-serif",
   },
   leaveBtn: {
-    flex: 1,
-    padding: '12px',
-    background: '#ef4444',
-    border: 'none',
-    borderRadius: '12px',
-    fontSize: '14px',
-    fontWeight: '600',
-    cursor: 'pointer',
-    color: 'white',
-    transition: 'all 0.3s'
-  }
+    flex: 1, padding: '12px',
+    background: 'rgba(239,68,68,0.15)',
+    border: '1px solid rgba(239,68,68,0.4)',
+    borderRadius: 12, fontSize: 14, fontWeight: 700,
+    cursor: 'pointer', color: '#ef4444',
+    transition: 'all 0.3s', fontFamily: "'Outfit', sans-serif",
+  },
 };
 
 export default CodeEditor;
