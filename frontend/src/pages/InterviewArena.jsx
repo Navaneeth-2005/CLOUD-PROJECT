@@ -107,6 +107,30 @@ const InterviewArena = () => {
     return () => clearInterval(timerIntervalRef.current);
   }, [session]);
 
+  // 2.5 Component Unmount Cleanup (Closes background sockets, streams & peer connections)
+  useEffect(() => {
+    return () => {
+      // 1. Disconnect Socket
+      if (socketRef.current) {
+        console.log('🔌 Disconnecting socket on unmount...');
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
+      // 2. Stop Microphone streams
+      if (localStreamRef.current) {
+        console.log('🎤 Releasing microphone on unmount...');
+        localStreamRef.current.getTracks().forEach((track) => track.stop());
+        localStreamRef.current = null;
+      }
+      // 3. Close WebRTC Peer Connection
+      if (peerConnectionRef.current) {
+        console.log('🌐 Closing WebRTC connection on unmount...');
+        peerConnectionRef.current.close();
+        peerConnectionRef.current = null;
+      }
+    };
+  }, []);
+
   // 3. Connect to WebSockets and Init WebRTC
   const handleJoinArena = async () => {
     if (!displayName.trim()) {
