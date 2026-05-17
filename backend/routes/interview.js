@@ -65,7 +65,23 @@ router.get('/list', authMiddleware, roleMiddleware('company', 'admin'), async (r
       where: { companyId: req.user.id },
       order: [['scheduledStart', 'ASC']]
     });
-    res.json(sessions);
+
+    // Filter out sessions that ended or were completed more than 6 hours ago
+    const now = new Date();
+    const filteredSessions = sessions.filter(s => {
+      if (s.status === 'completed') {
+        const completedTime = new Date(s.updatedAt || s.scheduledEnd);
+        const diffHours = (now - completedTime) / (1000 * 60 * 60);
+        return diffHours <= 6;
+      }
+      if (new Date(s.scheduledEnd) < now) {
+         const diffHours = (now - new Date(s.scheduledEnd)) / (1000 * 60 * 60);
+         if (diffHours > 6) return false;
+      }
+      return true;
+    });
+
+    res.json(filteredSessions);
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }

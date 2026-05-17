@@ -29,7 +29,19 @@ router.get('/all', authMiddleware, async (req, res) => {
       include: [{ model: Question, as: 'questions', separate: true, order: [['id', 'ASC']] }],
       order: [['createdAt', 'DESC']]
     });
-    res.json({ contests });
+
+    // Filter out contests that ended more than 6 hours ago
+    const now = new Date();
+    const filteredContests = contests.filter(c => {
+      const endTime = new Date(c.endTime);
+      if (endTime < now) {
+        const diffHours = (now - endTime) / (1000 * 60 * 60);
+        return diffHours <= 6;
+      }
+      return true;
+    });
+
+    res.json({ contests: filteredContests });
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }
