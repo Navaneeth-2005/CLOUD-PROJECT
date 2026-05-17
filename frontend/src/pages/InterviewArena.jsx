@@ -2,14 +2,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { io } from 'socket.io-client';
 import { toast } from 'react-toastify';
-import axios from 'axios';
+import API from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 
-// Base API configurations matching EKS ELB Load Balancer
-const getBaseUrl = () => {
-  return window.location.hostname === 'localhost' 
-    ? 'http://localhost:5000' 
-    : 'http://a44873505701344cba71f72d3e0dc774-1621922902.ap-south-1.elb.amazonaws.com';
+// Resolve the base Socket domain from our Axios configuration dynamically
+const getSocketUrl = () => {
+  const url = API.defaults.baseURL || 'http://localhost:5000/api';
+  return url.replace(/\/api$/, '');
 };
 
 const InterviewArena = () => {
@@ -42,7 +41,7 @@ const InterviewArena = () => {
   useEffect(() => {
     const fetchSession = async () => {
       try {
-        const response = await axios.get(`${getBaseUrl()}/api/interviews/session/${token}`);
+        const response = await API.get(`/interviews/session/${token}`);
         setSession(response.data);
         setNotepadContent(response.data.notepadContent || '');
         setLoading(false);
@@ -104,7 +103,7 @@ const InterviewArena = () => {
     }
 
     // Connect socket
-    const socket = io(getBaseUrl());
+    const socket = io(getSocketUrl());
     socketRef.current = socket;
 
     socket.emit('join-room', {
@@ -245,12 +244,7 @@ const InterviewArena = () => {
   // 6. Recruiter Interview Controls (Start, Extend, End)
   const handleStartInterview = async () => {
     try {
-      const authHeader = `Bearer ${localStorage.getItem('token')}`;
-      await axios.post(
-        `${getBaseUrl()}/api/interviews/session/${token}/status`,
-        { status: 'active' },
-        { headers: { Authorization: authHeader } }
-      );
+      await API.post(`/interviews/session/${token}/status`, { status: 'active' });
       setSession(prev => ({ ...prev, status: 'active' }));
       toast.success('Interview session successfully started!');
     } catch (err) {
@@ -263,13 +257,7 @@ const InterviewArena = () => {
     if (!minutes || isNaN(minutes) || minutes <= 0) return;
 
     try {
-      const authHeader = `Bearer ${localStorage.getItem('token')}`;
-      const response = await axios.post(
-        `${getBaseUrl()}/api/interviews/session/${token}/extend`,
-        { minutes: parseInt(minutes) },
-        { headers: { Authorization: authHeader } }
-      );
-      
+      const response = await API.post(`/interviews/session/${token}/extend`, { minutes: parseInt(minutes) });
       const newEnd = response.data.session.scheduledEnd;
       setSession(prev => ({ ...prev, scheduledEnd: newEnd }));
       
@@ -286,12 +274,7 @@ const InterviewArena = () => {
     if (!confirm('Are you sure you want to end this interview session? This will disconnect the candidate and finalize the logs.')) return;
 
     try {
-      const authHeader = `Bearer ${localStorage.getItem('token')}`;
-      await axios.post(
-        `${getBaseUrl()}/api/interviews/session/${token}/status`,
-        { status: 'completed' },
-        { headers: { Authorization: authHeader } }
-      );
+      await API.post(`/interviews/session/${token}/status`, { status: 'completed' });
       
       if (socketRef.current) {
         socketRef.current.emit('session-ended', { token });
