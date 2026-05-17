@@ -426,6 +426,28 @@ const InterviewArena = () => {
   }
 
   // 7. Join Overlay / Landing Screen
+  if (session?.status === 'completed') {
+    return (
+      <div style={styles.landingOverlay}>
+        <div style={styles.landingCard}>
+          <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+            <div style={{ fontSize: '48px', marginBottom: '10px' }}>✅</div>
+            <h2 style={{ fontSize: '24px', color: '#1f2937', marginBottom: '10px' }}>Interview Completed</h2>
+            <p style={{ color: '#64748b', fontSize: '15px' }}>
+              This interview session has successfully concluded and is no longer accessible.
+            </p>
+          </div>
+          <button 
+            onClick={() => navigate('/')}
+            style={styles.landingBtn}
+          >
+            Return to Dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (!joined) {
     return (
       <div style={styles.landingOverlay}>
