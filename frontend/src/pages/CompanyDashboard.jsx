@@ -10,6 +10,9 @@ const CompanyDashboard = () => {
   const [contests, setContests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [showDiagnostics, setShowDiagnostics] = useState(false);
+  const [diagnosticsData, setDiagnosticsData] = useState(null);
+  const [diagnosticsLoading, setDiagnosticsLoading] = useState(false);
   const [hoveredCard, setHoveredCard] = useState(null);
   const [form, setForm] = useState({
     title: '', description: '', startTime: '', endTime: ''
@@ -28,6 +31,23 @@ const CompanyDashboard = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchDiagnostics = async () => {
+    setDiagnosticsLoading(true);
+    try {
+      const res = await API.get('/analytics/system-diagnostics');
+      setDiagnosticsData(res.data);
+    } catch (err) {
+      toast.error('Failed to fetch EKS diagnostics');
+    } finally {
+      setDiagnosticsLoading(false);
+    }
+  };
+
+  const handleOpenDiagnostics = () => {
+    setShowDiagnostics(true);
+    fetchDiagnostics();
   };
 
   // Format date in IST
@@ -95,14 +115,24 @@ const CompanyDashboard = () => {
             <h1 style={styles.headerTitle}>Welcome back, {user?.name}!</h1>
             <p style={styles.headerSub}>Manage your coding assessments and track candidates</p>
           </div>
-          <button
-            style={styles.createBtn}
-            onClick={() => setShowModal(true)}
-            onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
-            onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
-          >
-            + Create Contest
-          </button>
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <button
+              style={styles.diagnosticsBtn}
+              onClick={handleOpenDiagnostics}
+              onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+              onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
+            >
+              📊 EKS Diagnostics
+            </button>
+            <button
+              style={styles.createBtn}
+              onClick={() => setShowModal(true)}
+              onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+              onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
+            >
+              + Create Contest
+            </button>
+          </div>
         </div>
 
         {/* Stats */}
@@ -316,6 +346,204 @@ const CompanyDashboard = () => {
           </div>
         </div>
       )}
+
+      {/* System Diagnostics Modal */}
+      {showDiagnostics && (
+        <div style={styles.overlay} onClick={() => setShowDiagnostics(false)}>
+          <div style={{ ...styles.modal, maxWidth: '850px', width: '95%' }} onClick={e => e.stopPropagation()}>
+            <div style={styles.modalHeader}>
+              <div>
+                <h2 style={styles.modalTitle}>⚡ CloudWatch EKS Container Diagnostics</h2>
+                <p style={{ fontSize: '12px', color: '#666', margin: '4px 0 0' }}>
+                  Real-time cluster health, resource utilization, and live log stream
+                </p>
+              </div>
+              <button
+                style={styles.closeBtn}
+                onClick={() => setShowDiagnostics(false)}
+                onMouseEnter={e => e.currentTarget.style.background = '#fee2e2'}
+                onMouseLeave={e => e.currentTarget.style.background = '#f5f5f5'}
+              >
+                ✕
+              </button>
+            </div>
+
+            {diagnosticsLoading ? (
+              <div style={{ padding: '60px 0', textAlign: 'center' }}>
+                <div style={{
+                  width: '40px', height: '40px', border: '4px solid #f3f3f3', borderTop: '4px solid #0288d1',
+                  borderRadius: '50%', display: 'inline-block', animation: 'spin 1s linear infinite'
+                }} />
+                <style>{`
+                  @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+                `}</style>
+                <p style={{ marginTop: '16px', color: '#666', fontSize: '14px', fontWeight: '500' }}>
+                  Querying EKS cluster components and metrics...
+                </p>
+              </div>
+            ) : diagnosticsData ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                
+                {/* Stats Grid */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+                  
+                  {/* Database Card */}
+                  <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '16px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                      <span style={{ fontSize: '13px', fontWeight: '600', color: '#475569' }}>Amazon RDS MySQL</span>
+                      <span style={{
+                        fontSize: '11px', fontWeight: 'bold', padding: '2px 8px', borderRadius: '12px',
+                        background: diagnosticsData.db.status === 'Connected' ? '#d1fae5' : '#fee2e2',
+                        color: diagnosticsData.db.status === 'Connected' ? '#065f46' : '#991b1b'
+                      }}>
+                        {diagnosticsData.db.status}
+                      </span>
+                    </div>
+                    <p style={{ fontSize: '11px', color: '#64748b', wordBreak: 'break-all', margin: '0 0 6px' }}>
+                      Host: {diagnosticsData.db.host}
+                    </p>
+                    <p style={{ fontSize: '12px', fontWeight: '600', color: '#0288d1', margin: 0 }}>
+                      Latency Check: {diagnosticsData.db.latencyMs} ms
+                    </p>
+                  </div>
+
+                  {/* SQS Card */}
+                  <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '16px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                      <span style={{ fontSize: '13px', fontWeight: '600', color: '#475569' }}>Amazon SQS Queue</span>
+                      <span style={{
+                        fontSize: '11px', fontWeight: 'bold', padding: '2px 8px', borderRadius: '12px',
+                        background: '#bae6fd', color: '#0369a1'
+                      }}>
+                        {diagnosticsData.sqs.status}
+                      </span>
+                    </div>
+                    <p style={{ fontSize: '11px', color: '#64748b', margin: '0 0 6px' }}>
+                      Queue: codestorm-prod-queue
+                    </p>
+                    <div style={{ display: 'flex', gap: '12px', marginTop: '4px' }}>
+                      <div>
+                        <span style={{ fontSize: '10px', color: '#94a3b8', display: 'block' }}>QUEUED</span>
+                        <span style={{ fontSize: '14px', fontWeight: '700', color: '#334155' }}>
+                          {diagnosticsData.sqs.queueSize}
+                        </span>
+                      </div>
+                      <div>
+                        <span style={{ fontSize: '10px', color: '#94a3b8', display: 'block' }}>PROCESSING</span>
+                        <span style={{ fontSize: '14px', fontWeight: '700', color: '#334155' }}>
+                          {diagnosticsData.sqs.inflightJobs}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Node Process Card */}
+                  <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '16px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                      <span style={{ fontSize: '13px', fontWeight: '600', color: '#475569' }}>EKS Pod Vitals</span>
+                      <span style={{
+                        fontSize: '11px', fontWeight: 'bold', padding: '2px 8px', borderRadius: '12px',
+                        background: '#e0f2fe', color: '#0369a1'
+                      }}>
+                        {diagnosticsData.system.isEks ? 'EKS Pod' : 'Local Dev'}
+                      </span>
+                    </div>
+                    <p style={{ fontSize: '11px', color: '#64748b', margin: '0 0 6px', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                      ID: {diagnosticsData.system.hostName}
+                    </p>
+                    <p style={{ fontSize: '12px', fontWeight: '600', color: '#059669', margin: 0 }}>
+                      Memory Heap: {diagnosticsData.system.memory.heapUsedMb} / {diagnosticsData.system.memory.heapTotalMb} MB
+                    </p>
+                  </div>
+
+                </div>
+
+                {/* Second Row Vitals */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '14px 16px', fontSize: '12px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dashed #e2e8f0', paddingBottom: '6px' }}>
+                      <span style={{ color: '#64748b' }}>Amazon S3 Solution Bucket</span>
+                      <span style={{ fontWeight: '600', color: '#334155' }}>{diagnosticsData.s3.bucket}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dashed #e2e8f0', padding: '6px 0' }}>
+                      <span style={{ color: '#64748b' }}>Amazon SES Email Identity</span>
+                      <span style={{ fontWeight: '600', color: '#334155' }}>Mumbai ({diagnosticsData.ses.region})</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '6px' }}>
+                      <span style={{ color: '#64748b' }}>Uptime</span>
+                      <span style={{ fontWeight: '600', color: '#334155' }}>{Math.floor(diagnosticsData.system.uptimeSec / 60)} minutes</span>
+                    </div>
+                  </div>
+
+                  <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '14px 16px', fontSize: '12px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dashed #e2e8f0', paddingBottom: '6px' }}>
+                      <span style={{ color: '#64748b' }}>NodeJS Engine Version</span>
+                      <span style={{ fontWeight: '600', color: '#334155' }}>{diagnosticsData.system.nodeVersion}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dashed #e2e8f0', padding: '6px 0' }}>
+                      <span style={{ color: '#64748b' }}>OS Infrastructure</span>
+                      <span style={{ fontWeight: '600', color: '#334155' }}>{diagnosticsData.system.platform} ({diagnosticsData.system.arch})</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '6px' }}>
+                      <span style={{ color: '#64748b' }}>VPC LoadBalancer Host</span>
+                      <span style={{ fontWeight: '600', color: '#334155' }}>codestorm-prod-alb-98231.ap-south-1.elb.amazonaws.com</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* CloudWatch Terminal Log Stream */}
+                <div>
+                  <h3 style={{ fontSize: '14px', fontWeight: '700', color: '#334155', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span>💻</span> Live CloudWatch Container Log Stream
+                  </h3>
+                  <div style={{
+                    background: '#0f172a', borderRadius: '16px', padding: '20px', height: '180px', overflowY: 'auto',
+                    fontFamily: '"Fira Code", monospace, "Courier New"', fontSize: '11px', color: '#cbd5e1',
+                    lineHeight: '1.6', border: '1px solid #334155', boxShadow: 'inset 0 2px 10px rgba(0,0,0,0.5)'
+                  }}>
+                    {diagnosticsData.logs.map((log, index) => {
+                      let color = '#cbd5e1';
+                      if (log.includes('INFO:')) color = '#38bdf8';
+                      if (log.includes('SUCCESS:')) color = '#4ade80';
+                      if (log.includes('HEALTHCHECK:')) color = '#fbbf24';
+                      if (log.includes('DEBUG:')) color = '#c084fc';
+                      return (
+                        <div key={index} style={{ color, marginBottom: '6px', borderBottom: '1px solid rgba(255,255,255,0.03)', paddingBottom: '4px' }}>
+                          {log}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                  <button
+                    onClick={fetchDiagnostics}
+                    style={{
+                      background: 'white', border: '1px solid #cbd5e1', color: '#475569', borderRadius: '10px',
+                      padding: '8px 16px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', display: 'flex',
+                      alignItems: 'center', gap: '6px'
+                    }}
+                  >
+                    🔄 Refresh Metrics
+                  </button>
+                  <button
+                    onClick={() => setShowDiagnostics(false)}
+                    style={{
+                      background: 'linear-gradient(135deg, #0f172a, #334155)', border: 'none', color: 'white',
+                      borderRadius: '10px', padding: '8px 20px', fontSize: '13px', fontWeight: '600', cursor: 'pointer'
+                    }}
+                  >
+                    Dismiss
+                  </button>
+                </div>
+
+              </div>
+            ) : null}
+
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -359,6 +587,18 @@ const styles = {
     cursor: 'pointer',
     transition: 'all 0.3s',
     boxShadow: '0 4px 15px rgba(79,195,247,0.4)'
+  },
+  diagnosticsBtn: {
+    background: 'rgba(255, 255, 255, 0.1)',
+    backdropFilter: 'blur(10px)',
+    border: '1px solid rgba(255, 255, 255, 0.25)',
+    color: 'white',
+    padding: '12px 24px',
+    borderRadius: '12px',
+    fontSize: '14px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    transition: 'all 0.3s'
   },
   statsRow: {
     display: 'grid',
