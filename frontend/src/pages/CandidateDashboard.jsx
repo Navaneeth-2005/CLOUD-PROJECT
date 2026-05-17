@@ -127,10 +127,10 @@ const CandidateDashboard = () => {
   const getSubmissionColor = (status) => {
     switch (status) {
       case 'accepted': return { color: '#10b981', bg: '#d1fae5' };
-      case 'rejected': return { color: '#ef4444', bg: '#fee2e2' };
-      case 'pending': return { color: '#f59e0b', bg: '#fef3c7' };
-      case 'running': return { color: '#3b82f6', bg: '#dbeafe' };
-      default: return { color: '#888', bg: '#f5f5f5' };
+      case 'rejected': return { color: '#ef4444', bg: 'rgba(239,68,68,0.15)' };
+      case 'pending': return { color: '#f59e0b', bg: 'rgba(245,158,11,0.15)' };
+      case 'running': return { color: '#3b82f6', bg: 'rgba(59,130,246,0.15)' };
+      default: return { color: '#94a3b8', bg: 'rgba(148,163,184,0.1)' };
     }
   };
 
@@ -143,10 +143,10 @@ const CandidateDashboard = () => {
       return { label: '✓ Submitted', bg: 'linear-gradient(135deg, #6b7280, #4b5563)', opacity: 0.7, cursor: 'not-allowed' };
     }
     if (isEnded) {
-      return { label: '🏁 Ended', bg: '#e0e0e0', opacity: 0.5, cursor: 'not-allowed' };
+      return { label: '🏁 Ended', bg: 'rgba(100,116,139,0.3)', opacity: 0.5, cursor: 'not-allowed' };
     }
     if (!isRegistered) {
-      return { label: '📋 Register', bg: 'linear-gradient(135deg, #4fc3f7, #0288d1)', opacity: 1, cursor: 'pointer' };
+      return { label: '📋 Register', bg: 'linear-gradient(135deg, #00e5ff, #0077ff)', opacity: 1, cursor: 'pointer' };
     }
     if (isUpcoming) {
       return { label: '⏰ Registered', bg: 'linear-gradient(135deg, #f59e0b, #d97706)', opacity: 1, cursor: 'pointer' };
@@ -154,7 +154,7 @@ const CandidateDashboard = () => {
     if (isLive) {
       return { label: '▶ Enter Contest', bg: 'linear-gradient(135deg, #10b981, #059669)', opacity: 1, cursor: 'pointer' };
     }
-    return { label: status.label, bg: '#e0e0e0', opacity: 0.5, cursor: 'not-allowed' };
+    return { label: status.label, bg: 'rgba(100,116,139,0.3)', opacity: 0.5, cursor: 'not-allowed' };
   };
 
   return (
@@ -175,6 +175,18 @@ const CandidateDashboard = () => {
         @keyframes modalIn {
           from { opacity: 0; transform: scale(0.9); }
           to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes shimmer {
+          0% { background-position: -200% 0; }
+          100% { background-position: 200% 0; }
+        }
+        @keyframes cardHover {
+          from { transform: translateY(0); }
+          to { transform: translateY(-6px); }
+        }
+        @keyframes orbFloat {
+          0%, 100% { transform: translateY(0) scale(1); }
+          50% { transform: translateY(-20px) scale(1.05); }
         }
       `}</style>
 
@@ -599,16 +611,20 @@ const CandidateDashboard = () => {
 const styles = {
   page: {
     minHeight: 'calc(100vh - 65px)',
-    background: '#f0f4f8'
+    background: 'transparent',
+    fontFamily: "'Outfit', 'Inter', sans-serif"
   },
   header: {
-    background: 'linear-gradient(135deg, #0f0c29, #302b63)',
-    padding: '40px 40px 30px',
-    color: 'white'
+    background: 'linear-gradient(135deg, rgba(0,229,255,0.08) 0%, rgba(0,119,255,0.1) 50%, rgba(168,85,247,0.08) 100%)',
+    borderBottom: '1px solid rgba(0,229,255,0.12)',
+    padding: '36px 40px 28px',
+    color: 'white',
+    position: 'relative',
+    overflow: 'hidden'
   },
   headerInner: {
     maxWidth: '1200px',
-    margin: '0 auto 30px',
+    margin: '0 auto 28px',
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center'
@@ -619,26 +635,31 @@ const styles = {
     gap: '20px'
   },
   avatarLarge: {
-    width: '60px',
-    height: '60px',
-    background: 'linear-gradient(135deg, #4fc3f7, #0288d1)',
+    width: '64px',
+    height: '64px',
+    background: 'linear-gradient(135deg, #00e5ff, #0077ff)',
     borderRadius: '50%',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: '24px',
-    fontWeight: 'bold',
+    fontSize: '26px',
+    fontWeight: '800',
     color: 'white',
-    boxShadow: '0 4px 15px rgba(79,195,247,0.4)'
+    boxShadow: '0 0 30px rgba(0,229,255,0.4), 0 4px 20px rgba(0,0,0,0.3)',
+    border: '2px solid rgba(0,229,255,0.3)'
   },
   headerTitle: {
     fontSize: '28px',
-    fontWeight: '700',
-    margin: '0 0 6px'
+    fontWeight: '800',
+    margin: '0 0 6px',
+    background: 'linear-gradient(135deg, #ffffff, #00e5ff)',
+    WebkitBackgroundClip: 'text',
+    WebkitTextFillColor: 'transparent',
+    backgroundClip: 'text'
   },
   headerSub: {
     fontSize: '14px',
-    color: 'rgba(255,255,255,0.7)',
+    color: 'rgba(148,163,184,0.9)',
     margin: 0
   },
   statsRow: {
@@ -649,33 +670,39 @@ const styles = {
     margin: '0 auto'
   },
   statCard: {
-    background: 'rgba(255,255,255,0.08)',
-    backdropFilter: 'blur(10px)',
-    borderRadius: '16px',
-    padding: '16px',
+    background: 'rgba(255,255,255,0.04)',
+    backdropFilter: 'blur(12px)',
+    WebkitBackdropFilter: 'blur(12px)',
+    borderRadius: '18px',
+    padding: '18px',
     display: 'flex',
     alignItems: 'center',
-    gap: '12px',
-    border: '1px solid rgba(255,255,255,0.12)'
+    gap: '14px',
+    border: '1px solid rgba(0,229,255,0.1)',
+    transition: 'all 0.3s ease'
   },
   statIconBox: {
-    width: '42px',
-    height: '42px',
+    width: '44px',
+    height: '44px',
     borderRadius: '12px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center'
   },
-  statIcon: { fontSize: '20px' },
+  statIcon: { fontSize: '22px' },
   statValue: {
-    fontSize: '20px',
-    fontWeight: '700',
-    margin: 0
+    fontSize: '22px',
+    fontWeight: '800',
+    margin: 0,
+    color: '#f1f5f9'
   },
   statLabel: {
     fontSize: '11px',
-    color: 'rgba(255,255,255,0.6)',
-    margin: 0
+    color: 'rgba(148,163,184,0.7)',
+    margin: 0,
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px',
+    fontWeight: '600'
   },
   content: {
     maxWidth: '1200px',
@@ -684,19 +711,25 @@ const styles = {
   },
   tabs: {
     display: 'flex',
-    gap: '12px',
-    marginBottom: '30px'
+    gap: '8px',
+    marginBottom: '30px',
+    background: 'rgba(255,255,255,0.03)',
+    border: '1px solid rgba(255,255,255,0.06)',
+    borderRadius: '14px',
+    padding: '6px',
+    width: 'fit-content'
   },
   tab: {
     padding: '10px 24px',
-    borderRadius: '12px',
+    borderRadius: '10px',
     fontSize: '14px',
     fontWeight: '600',
     cursor: 'pointer',
-    transition: 'all 0.3s'
+    transition: 'all 0.2s ease',
+    border: 'none'
   },
   tabContent: {
-    animation: 'fadeIn 0.3s ease-out'
+    animation: 'fadeIn 0.4s ease-out'
   },
   grid: {
     display: 'grid',
@@ -704,12 +737,15 @@ const styles = {
     gap: '24px'
   },
   card: {
-    background: 'white',
-    borderRadius: '20px',
-    padding: '24px',
-    transition: 'all 0.3s ease',
+    background: 'rgba(15,23,42,0.6)',
+    backdropFilter: 'blur(16px)',
+    WebkitBackdropFilter: 'blur(16px)',
+    borderRadius: '22px',
+    padding: '26px',
+    transition: 'all 0.3s cubic-bezier(0.4,0,0.2,1)',
     cursor: 'pointer',
-    border: '1px solid #f0f0f0'
+    border: '1px solid rgba(255,255,255,0.07)',
+    boxShadow: '0 8px 32px rgba(0,0,0,0.3)'
   },
   cardTop: {
     display: 'flex',
@@ -719,43 +755,46 @@ const styles = {
   },
   statusBadge: {
     fontSize: '12px',
-    fontWeight: '600',
+    fontWeight: '700',
     padding: '4px 12px',
-    borderRadius: '20px'
+    borderRadius: '20px',
+    letterSpacing: '0.3px'
   },
   registeredBadge: {
     fontSize: '11px',
-    fontWeight: '600',
-    padding: '3px 8px',
+    fontWeight: '700',
+    padding: '3px 10px',
     borderRadius: '20px',
-    background: '#d1fae5',
-    color: '#10b981'
+    background: 'rgba(16,185,129,0.15)',
+    color: '#10b981',
+    border: '1px solid rgba(16,185,129,0.3)'
   },
   questionCount: {
     fontSize: '12px',
-    color: '#888',
-    background: '#f5f5f5',
+    color: '#94a3b8',
+    background: 'rgba(255,255,255,0.06)',
     padding: '4px 10px',
     borderRadius: '20px'
   },
   cardTitle: {
     fontSize: '18px',
     fontWeight: '700',
-    color: '#1a1a2e',
+    color: '#f1f5f9',
     margin: '0 0 8px'
   },
   cardDesc: {
     fontSize: '13px',
-    color: '#888',
+    color: '#94a3b8',
     margin: '0 0 20px',
-    lineHeight: '1.5'
+    lineHeight: '1.6'
   },
   cardDates: {
     display: 'flex',
     alignItems: 'center',
     gap: '16px',
-    padding: '16px',
-    background: '#f8f9fa',
+    padding: '14px 16px',
+    background: 'rgba(0,229,255,0.04)',
+    border: '1px solid rgba(0,229,255,0.08)',
     borderRadius: '12px',
     marginBottom: '20px'
   },
@@ -766,20 +805,21 @@ const styles = {
     flex: 1
   },
   dateLabel: {
-    fontSize: '11px',
-    color: '#aaa',
+    fontSize: '10px',
+    color: '#64748b',
     textTransform: 'uppercase',
-    letterSpacing: '0.5px'
+    letterSpacing: '0.8px',
+    fontWeight: '600'
   },
   dateValue: {
     fontSize: '12px',
     fontWeight: '600',
-    color: '#333'
+    color: '#cbd5e1'
   },
   dateDivider: {
     width: '1px',
     height: '30px',
-    background: '#e0e0e0'
+    background: 'rgba(255,255,255,0.08)'
   },
   cardActions: {
     display: 'flex',
@@ -788,14 +828,14 @@ const styles = {
   actionBtn: {
     flex: 1,
     padding: '10px',
-    background: 'white',
-    border: '1px solid #e0e0e0',
+    border: 'none',
     borderRadius: '10px',
     fontSize: '13px',
-    fontWeight: '500',
+    fontWeight: '600',
     cursor: 'pointer',
-    transition: 'all 0.2s',
-    color: '#333'
+    background: 'rgba(255,255,255,0.05)',
+    color: '#94a3b8',
+    transition: 'all 0.2s ease'
   },
   actionBtnPrimary: {
     flex: 1,
@@ -803,9 +843,10 @@ const styles = {
     border: 'none',
     borderRadius: '10px',
     fontSize: '13px',
-    fontWeight: '600',
+    fontWeight: '700',
     transition: 'all 0.3s',
-    color: 'white'
+    color: 'white',
+    cursor: 'pointer'
   },
   submissionList: {
     display: 'flex',
@@ -813,14 +854,16 @@ const styles = {
     gap: '10px'
   },
   submissionCard: {
-    background: 'white',
+    background: 'rgba(15,23,42,0.6)',
+    backdropFilter: 'blur(12px)',
+    WebkitBackdropFilter: 'blur(12px)',
     borderRadius: '14px',
     padding: '16px 20px',
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    border: '1px solid #f0f0f0',
-    transition: 'all 0.2s',
+    border: '1px solid rgba(255,255,255,0.06)',
+    transition: 'all 0.2s ease',
     cursor: 'pointer'
   },
   subLeft: {
@@ -836,13 +879,13 @@ const styles = {
   },
   subQuestion: {
     fontSize: '14px',
-    fontWeight: '600',
-    color: '#1a1a2e',
+    fontWeight: '700',
+    color: '#e2e8f0',
     margin: '0 0 2px'
   },
   subContest: {
     fontSize: '12px',
-    color: '#888',
+    color: '#64748b',
     margin: 0
   },
   subRight: {
@@ -852,44 +895,46 @@ const styles = {
   },
   subLang: {
     fontSize: '12px',
-    background: '#f0f4f8',
-    color: '#555',
+    background: 'rgba(0,229,255,0.08)',
+    color: '#00e5ff',
     padding: '4px 10px',
     borderRadius: '8px',
-    fontWeight: '500'
+    fontWeight: '600',
+    border: '1px solid rgba(0,229,255,0.15)'
   },
   subStatus: {
     fontSize: '12px',
-    fontWeight: '600',
+    fontWeight: '700',
     padding: '4px 12px',
     borderRadius: '20px',
     textTransform: 'capitalize'
   },
   subScore: {
     fontSize: '13px',
-    fontWeight: '700',
-    color: '#1a1a2e'
+    fontWeight: '800',
+    color: '#f1f5f9'
   },
   subDate: {
     fontSize: '12px',
-    color: '#aaa'
+    color: '#475569'
   },
   skeletonCard: {
-    background: 'white',
+    background: 'rgba(15,23,42,0.5)',
+    border: '1px solid rgba(255,255,255,0.05)',
     borderRadius: '20px',
     padding: '24px',
     animation: 'pulse 1.5s ease-in-out infinite'
   },
   skeletonTitle: {
     height: '20px',
-    background: '#e0e0e0',
+    background: 'rgba(255,255,255,0.06)',
     borderRadius: '8px',
     marginBottom: '12px',
     width: '60%'
   },
   skeletonText: {
     height: '14px',
-    background: '#e0e0e0',
+    background: 'rgba(255,255,255,0.04)',
     borderRadius: '8px',
     marginBottom: '8px',
     width: '80%'
@@ -897,50 +942,57 @@ const styles = {
   empty: {
     textAlign: 'center',
     padding: '80px 20px',
-    background: 'white',
-    borderRadius: '20px'
+    background: 'rgba(15,23,42,0.5)',
+    backdropFilter: 'blur(12px)',
+    WebkitBackdropFilter: 'blur(12px)',
+    borderRadius: '20px',
+    border: '1px solid rgba(255,255,255,0.06)'
   },
   emptyIcon: { fontSize: '60px', marginBottom: '16px' },
   emptyTitle: {
     fontSize: '20px',
     fontWeight: '700',
-    color: '#1a1a2e',
+    color: '#f1f5f9',
     margin: '0 0 8px'
   },
   emptySub: {
     fontSize: '14px',
-    color: '#888',
+    color: '#64748b',
     margin: 0
   },
   overlay: {
     position: 'fixed',
     top: 0, left: 0, right: 0, bottom: 0,
-    background: 'rgba(0,0,0,0.6)',
+    background: 'rgba(0,0,0,0.8)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 1000,
-    backdropFilter: 'blur(4px)'
+    backdropFilter: 'blur(8px)'
   },
   modal: {
-    background: 'white',
+    background: 'rgba(15,23,42,0.95)',
+    backdropFilter: 'blur(24px)',
+    WebkitBackdropFilter: 'blur(24px)',
+    border: '1px solid rgba(0,229,255,0.2)',
     borderRadius: '24px',
     padding: '40px',
     width: '100%',
     maxWidth: '440px',
     textAlign: 'center',
     animation: 'modalIn 0.3s ease-out',
-    boxShadow: '0 25px 60px rgba(0,0,0,0.3)'
+    boxShadow: '0 30px 80px rgba(0,0,0,0.7)'
   },
   modalIcon: { fontSize: '52px', marginBottom: '16px' },
   modalTitle: {
     fontSize: '22px',
-    fontWeight: '700',
-    color: '#1a1a2e',
+    fontWeight: '800',
+    color: '#f1f5f9',
     margin: '0 0 12px'
   },
   modalInfo: {
-    background: '#f8f9fa',
+    background: 'rgba(0,229,255,0.05)',
+    border: '1px solid rgba(0,229,255,0.1)',
     borderRadius: '14px',
     padding: '16px',
     marginBottom: '20px',
@@ -956,13 +1008,13 @@ const styles = {
   },
   modalInfoLabel: {
     fontSize: '13px',
-    color: '#888',
+    color: '#64748b',
     fontWeight: '500'
   },
   modalInfoValue: {
     fontSize: '13px',
-    fontWeight: '600',
-    color: '#333'
+    fontWeight: '700',
+    color: '#e2e8f0'
   },
   modalActions: {
     display: 'flex',
@@ -971,25 +1023,27 @@ const styles = {
   cancelBtn: {
     flex: 1,
     padding: '12px',
-    background: '#f5f5f5',
-    border: 'none',
-    borderRadius: '12px',
-    fontSize: '14px',
-    fontWeight: '500',
-    cursor: 'pointer',
-    color: '#666'
-  },
-  confirmBtn: {
-    flex: 1,
-    padding: '12px',
-    background: 'linear-gradient(135deg, #4fc3f7, #0288d1)',
-    border: 'none',
+    background: 'rgba(255,255,255,0.05)',
+    border: '1px solid rgba(255,255,255,0.1)',
     borderRadius: '12px',
     fontSize: '14px',
     fontWeight: '600',
     cursor: 'pointer',
+    color: '#94a3b8',
+    fontFamily: "'Outfit', sans-serif"
+  },
+  confirmBtn: {
+    flex: 1,
+    padding: '12px',
+    background: 'linear-gradient(135deg, #00e5ff, #0077ff)',
+    border: 'none',
+    borderRadius: '12px',
+    fontSize: '14px',
+    fontWeight: '700',
+    cursor: 'pointer',
     color: 'white',
-    boxShadow: '0 4px 15px rgba(79,195,247,0.4)'
+    boxShadow: '0 4px 15px rgba(0,229,255,0.35)',
+    fontFamily: "'Outfit', sans-serif"
   },
   formField: {
     display: 'flex',
@@ -997,20 +1051,24 @@ const styles = {
     gap: '6px'
   },
   formLabel: {
-    fontSize: '13px',
+    fontSize: '12px',
     fontWeight: '600',
-    color: '#444'
+    color: '#94a3b8',
+    textAlign: 'left',
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px'
   },
   formInput: {
-    padding: '10px 14px',
-    border: '2px solid #e0e0e0',
+    padding: '11px 14px',
+    border: '1.5px solid rgba(255,255,255,0.1)',
     borderRadius: '10px',
     fontSize: '14px',
     outline: 'none',
-    color: '#333',
+    color: '#f1f5f9',
     transition: 'border 0.2s',
-    background: 'white'
+    background: 'rgba(255,255,255,0.05)',
+    fontFamily: "'Inter', sans-serif"
   }
 };
 
-export default CandidateDashboard;
+export default CandidateDashboard;
