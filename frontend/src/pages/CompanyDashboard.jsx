@@ -483,6 +483,7 @@ const CompanyDashboard = () => {
               </div>
             </form>
           </div>
+        </div>
       )}
 
       {/* Schedule Live Interview Modal */}
