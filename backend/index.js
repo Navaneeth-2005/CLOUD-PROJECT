@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const http = require('http');
+const { Server } = require('socket.io');
 require('dotenv').config();
 
 const sequelize = require('./config/db');
@@ -11,6 +13,7 @@ const leaderboardRoutes = require('./routes/leaderboard');
 const analyticsRoutes = require('./routes/analytics');
 const cheatingRoutes = require('./routes/cheating');
 const registrationRoutes = require('./routes/registration');
+const interviewRoutes = require('./routes/interview');
 
 const User = require('./models/User');
 const Contest = require('./models/Contest');
@@ -19,11 +22,22 @@ const Submission = require('./models/Submission');
 const CheatingLog = require('./models/CheatingLog');
 const ContestRegistration = require('./models/ContestRegistration');
 const TestCase = require('./models/TestCase');
+const InterviewSession = require('./models/InterviewSession');
+const { initSocket } = require('./config/socket');
 
 
 const { generalLimiter, authLimiter, submissionLimiter } = require('./middleware/rateLimiter');
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: '*',
+    methods: ['GET', 'POST']
+  }
+});
+
+initSocket(io);
 
 app.use(helmet());
 app.use(cors());
@@ -41,6 +55,7 @@ app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/cheating', cheatingRoutes);
 app.use('/api/registration', registrationRoutes);
+app.use('/api/interviews', interviewRoutes);
 
 const PORT = process.env.PORT || 5000;
 
@@ -51,7 +66,7 @@ sequelize.authenticate()
   })
   .then(() => {
     console.log('✅ Tables synced!');
-    app.listen(PORT, () => {
+    server.listen(PORT, () => {
       console.log(`✅ Server running on port ${PORT}`);
     });
   })

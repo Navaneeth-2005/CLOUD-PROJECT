@@ -11,6 +11,7 @@ import CandidateDashboard from './pages/CandidateDashboard';
 import CodeEditor from './pages/CodeEditor';
 import Leaderboard from './pages/Leaderboard';
 import ContestManagement from './pages/ContestManagement';
+import InterviewArena from './pages/InterviewArena';
 
 const ProtectedRoute = ({ children, role }) => {
   const { user } = useAuth();
@@ -56,11 +57,12 @@ const AppRoutes = () => {
             <Navigate to="/login" />
           )
         } />
-         <Route path="/company/contest/:contestId" element={
-         <ProtectedRoute role="company">
-         <ContestManagement />
-          </ProtectedRoute>} />
-      </Routes>
+          <Route path="/company/contest/:contestId" element={
+          <ProtectedRoute role="company">
+          <ContestManagement />
+           </ProtectedRoute>} />
+          <Route path="/interview/:token" element={<InterviewArena />} />
+       </Routes>
       <ToastContainer position="top-right" autoClose={3000} />
     </>
   );

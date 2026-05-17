@@ -8,8 +8,10 @@ const CompanyDashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [contests, setContests] = useState([]);
+  const [interviews, setInterviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [showInterviewModal, setShowInterviewModal] = useState(false);
   const [showDiagnostics, setShowDiagnostics] = useState(false);
   const [diagnosticsData, setDiagnosticsData] = useState(null);
   const [diagnosticsLoading, setDiagnosticsLoading] = useState(false);
@@ -17,9 +19,13 @@ const CompanyDashboard = () => {
   const [form, setForm] = useState({
     title: '', description: '', startTime: '', endTime: ''
   });
+  const [interviewForm, setInterviewForm] = useState({
+    title: '', candidateName: '', candidateEmail: '', scheduledStart: '', scheduledEnd: ''
+  });
 
   useEffect(() => {
     fetchContests();
+    fetchInterviews();
   }, []);
 
   const fetchContests = async () => {
@@ -30,6 +36,15 @@ const CompanyDashboard = () => {
       toast.error('Failed to fetch contests');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchInterviews = async () => {
+    try {
+      const res = await API.get('/interviews/list');
+      setInterviews(res.data);
+    } catch (err) {
+      toast.error('Failed to fetch interviews');
     }
   };
 
@@ -82,6 +97,23 @@ const CompanyDashboard = () => {
     }
   };
 
+  const handleCreateInterview = async (e) => {
+    e.preventDefault();
+    try {
+      await API.post('/interviews/create', {
+        ...interviewForm,
+        scheduledStart: new Date(interviewForm.scheduledStart).toISOString(),
+        scheduledEnd: new Date(interviewForm.scheduledEnd).toISOString()
+      });
+      toast.success('Interview scheduled and invite sent successfully!');
+      setShowInterviewModal(false);
+      setInterviewForm({ title: '', candidateName: '', candidateEmail: '', scheduledStart: '', scheduledEnd: '' });
+      fetchInterviews();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to schedule interview');
+    }
+  };
+
   const getStatus = (contest) => {
     const now = new Date();
     const start = new Date(contest.startTime);
@@ -123,6 +155,14 @@ const CompanyDashboard = () => {
               onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
             >
               📊 EKS Diagnostics
+            </button>
+            <button
+              style={{ ...styles.createBtn, background: 'linear-gradient(135deg, #a855f7, #7c3aed)', boxShadow: '0 4px 15px rgba(124,58,237,0.4)' }}
+              onClick={() => setShowInterviewModal(true)}
+              onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+              onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
+            >
+              🎙️ Schedule Interview
             </button>
             <button
               style={styles.createBtn}
@@ -257,6 +297,105 @@ const CompanyDashboard = () => {
         )}
       </div>
 
+      {/* Scheduled Interviews Section */}
+      <div style={{ ...styles.content, paddingTop: '0px' }}>
+        <h2 style={styles.sectionTitle}>🎙️ Live Collaborative Interviews</h2>
+        
+        {interviews.length === 0 ? (
+          <div style={styles.empty}>
+            <div style={{ fontSize: '50px', marginBottom: '16px' }}>🎙️</div>
+            <h3 style={styles.emptyTitle}>No interviews scheduled</h3>
+            <p style={styles.emptySub}>Schedule a peer programming session with a candidate to start</p>
+            <button
+              style={{ ...styles.createBtn, background: 'linear-gradient(135deg, #a855f7, #7c3aed)' }}
+              onClick={() => setShowInterviewModal(true)}
+            >
+              🎙️ Schedule Interview
+            </button>
+          </div>
+        ) : (
+          <div style={styles.grid}>
+            {interviews.map((session, i) => {
+              const isActive = session.status === 'active';
+              const isCompleted = session.status === 'completed';
+              const statusColor = isCompleted ? '#ef4444' : isActive ? '#10b981' : '#f59e0b';
+              const statusBg = isCompleted ? '#fee2e2' : isActive ? '#d1fae5' : '#fef3c7';
+
+              // Share link to copy
+              const shareLink = `${window.location.origin}/interview/${session.joinToken}`;
+
+              return (
+                <div
+                  key={session.id}
+                  style={{
+                    ...styles.card,
+                    borderLeft: `4px solid ${statusColor}`,
+                    animation: `fadeIn 0.4s ease-out ${i * 0.1}s both`
+                  }}
+                >
+                  <div style={styles.cardTop}>
+                    <span style={{
+                      ...styles.statusBadge,
+                      color: statusColor,
+                      background: statusBg
+                    }}>
+                      ● {session.status.toUpperCase()}
+                    </span>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(shareLink);
+                        toast.success('Candidate invite link copied to clipboard!');
+                      }}
+                      style={{
+                        background: 'transparent', border: 'none', color: '#0288d1',
+                        fontSize: '12px', fontWeight: 'bold', cursor: 'pointer'
+                      }}
+                    >
+                      🔗 Copy Invite Link
+                    </button>
+                  </div>
+
+                  <h3 style={styles.cardTitle}>{session.title}</h3>
+                  <div style={{ fontSize: '13px', color: '#666', marginBottom: '16px' }}>
+                    <strong>Candidate:</strong> {session.candidateName} ({session.candidateEmail})
+                  </div>
+
+                  <div style={styles.cardDates}>
+                    <div style={styles.dateItem}>
+                      <span style={styles.dateLabel}>Start</span>
+                      <span style={styles.dateValue}>
+                        {formatDate(session.scheduledStart)}
+                      </span>
+                    </div>
+                    <div style={styles.dateDivider} />
+                    <div style={styles.dateItem}>
+                      <span style={styles.dateLabel}>End</span>
+                      <span style={styles.dateValue}>
+                        {formatDate(session.scheduledEnd)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <button
+                    style={{
+                      ...styles.actionBtnPrimary,
+                      width: '100%',
+                      background: isCompleted ? '#cbd5e1' : 'linear-gradient(135deg, #a855f7, #7c3aed)',
+                      boxShadow: isCompleted ? 'none' : '0 4px 12px rgba(124,58,237,0.3)',
+                      cursor: isCompleted ? 'not-allowed' : 'pointer'
+                    }}
+                    disabled={isCompleted}
+                    onClick={() => navigate(`/interview/${session.joinToken}`)}
+                  >
+                    {isCompleted ? 'Interview Finished' : 'Enter Interview Arena →'}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
       {/* Create Contest Modal */}
       {showModal && (
         <div style={styles.overlay} onClick={() => setShowModal(false)}>
@@ -340,6 +479,112 @@ const CompanyDashboard = () => {
                 </button>
                 <button type="submit" style={styles.submitBtn}>
                   Create Contest
+                </button>
+              </div>
+            </form>
+          </div>
+      )}
+
+      {/* Schedule Live Interview Modal */}
+      {showInterviewModal && (
+        <div style={styles.overlay} onClick={() => setShowInterviewModal(false)}>
+          <div style={styles.modal} onClick={e => e.stopPropagation()}>
+            <div style={styles.modalHeader}>
+              <h2 style={styles.modalTitle}>🎙️ Schedule Collaborative Interview</h2>
+              <button
+                style={styles.closeBtn}
+                onClick={() => setShowInterviewModal(false)}
+                onMouseEnter={e => e.currentTarget.style.background = '#fee2e2'}
+                onMouseLeave={e => e.currentTarget.style.background = '#f5f5f5'}
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateInterview} style={styles.modalForm}>
+              <div style={styles.field}>
+                <label style={styles.label}>Session Title</label>
+                <input
+                  type="text"
+                  value={interviewForm.title}
+                  onChange={e => setInterviewForm({ ...interviewForm, title: e.target.value })}
+                  style={styles.input}
+                  placeholder="e.g. Senior Frontend Engineer Technical Interview"
+                  required
+                />
+              </div>
+
+              <div style={styles.field}>
+                <label style={styles.label}>Candidate Name</label>
+                <input
+                  type="text"
+                  value={interviewForm.candidateName}
+                  onChange={e => setInterviewForm({ ...interviewForm, candidateName: e.target.value })}
+                  style={styles.input}
+                  placeholder="e.g. Navaneeth"
+                  required
+                />
+              </div>
+
+              <div style={styles.field}>
+                <label style={styles.label}>Candidate Email</label>
+                <input
+                  type="email"
+                  value={interviewForm.candidateEmail}
+                  onChange={e => setInterviewForm({ ...interviewForm, candidateEmail: e.target.value })}
+                  style={styles.input}
+                  placeholder="e.g. tammineedinavaneeth2@gmail.com"
+                  required
+                />
+              </div>
+
+              <div style={styles.dateRow}>
+                <div style={styles.field}>
+                  <label style={styles.label}>Start Time (IST)</label>
+                  <input
+                    type="datetime-local"
+                    value={interviewForm.scheduledStart}
+                    onChange={e => setInterviewForm({ ...interviewForm, scheduledStart: e.target.value })}
+                    style={styles.input}
+                    required
+                  />
+                </div>
+                <div style={styles.field}>
+                  <label style={styles.label}>End Time (IST)</label>
+                  <input
+                    type="datetime-local"
+                    value={interviewForm.scheduledEnd}
+                    onChange={e => setInterviewForm({ ...interviewForm, scheduledEnd: e.target.value })}
+                    style={styles.input}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div style={{
+                background: '#f3e8ff',
+                border: '1px solid #e9d5ff',
+                borderRadius: '10px',
+                padding: '10px 14px',
+                fontSize: '13px',
+                color: '#6b21a8'
+              }}>
+                ✉️ An automated live join invitation email will be sent instantly to the candidate upon scheduling.
+              </div>
+
+              <div style={styles.modalActions}>
+                <button
+                  type="button"
+                  style={styles.cancelBtn}
+                  onClick={() => setShowInterviewModal(false)}
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  style={{ ...styles.submitBtn, background: 'linear-gradient(135deg, #a855f7, #7c3aed)', boxShadow: '0 4px 15px rgba(124,58,237,0.4)' }}
+                >
+                  Schedule Session
                 </button>
               </div>
             </form>

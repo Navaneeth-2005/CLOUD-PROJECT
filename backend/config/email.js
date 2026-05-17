@@ -343,4 +343,184 @@ const sendContestCredentials = async (
   console.log(`✅ Email sent successfully via AWS SES to ${toEmail}`);
 };
 
-module.exports = { sendContestCredentials };
+const sendInterviewInvitation = async (
+  toEmail,
+  candidateName,
+  interviewerName,
+  interviewTitle,
+  scheduledTime,
+  joinUrl
+) => {
+  const fromEmail = process.env.EMAIL_USER || 'no-reply@codestorm.io';
+
+  const htmlBody = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <style>
+        body {
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+          margin: 0;
+          padding: 0;
+          background: #f0f4f8;
+        }
+        .container {
+          max-width: 600px;
+          margin: 40px auto;
+          background: white;
+          border-radius: 16px;
+          overflow: hidden;
+          box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+        .header {
+          background: linear-gradient(135deg, #0f0c29, #302b63);
+          padding: 40px;
+          text-align: center;
+        }
+        .logo {
+          font-size: 28px;
+          font-weight: 800;
+          color: #4fc3f7;
+          letter-spacing: 1px;
+        }
+        .body {
+          padding: 40px;
+        }
+        .greeting {
+          font-size: 20px;
+          font-weight: 700;
+          color: #1a1a2e;
+          margin-bottom: 8px;
+        }
+        .message {
+          font-size: 14px;
+          color: #666;
+          line-height: 1.7;
+          margin-bottom: 30px;
+        }
+        .details-box {
+          background: #f8f9fa;
+          border-radius: 14px;
+          padding: 24px;
+          margin-bottom: 24px;
+          border: 1px solid #e0e0e0;
+        }
+        .detail-item {
+          display: flex;
+          justify-content: space-between;
+          padding: 10px 0;
+          border-bottom: 1px solid #e8e8e8;
+        }
+        .detail-item:last-child {
+          border-bottom: none;
+        }
+        .detail-label {
+          font-size: 13px;
+          color: #888;
+        }
+        .detail-value {
+          font-size: 13px;
+          font-weight: 600;
+          color: #1a1a2e;
+        }
+        .btn {
+          display: block;
+          text-align: center;
+          background: linear-gradient(135deg, #4fc3f7, #0288d1);
+          color: white !important;
+          padding: 14px 30px;
+          border-radius: 12px;
+          text-decoration: none;
+          font-weight: 600;
+          font-size: 16px;
+          margin: 24px 0;
+        }
+        .footer {
+          background: #f8f9fa;
+          padding: 24px;
+          text-align: center;
+          font-size: 12px;
+          color: #aaa;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <div class="logo">⚡ CodeStorm Live</div>
+        </div>
+        <div class="body">
+          <div class="greeting">Hello ${candidateName},</div>
+          <div class="message">
+            You have been invited to a collaborative live coding interview session by <strong>${interviewerName}</strong>. 
+            During this session, you will discuss coding challenges, write code live, and collaborate in real-time.
+          </div>
+          <div class="details-box">
+            <div class="detail-item">
+              <span class="detail-label">Interview Title</span>
+              <span class="detail-value">${interviewTitle}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Interviewer</span>
+              <span class="detail-value">${interviewerName}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Scheduled Time</span>
+              <span class="detail-value">${scheduledTime}</span>
+            </div>
+          </div>
+          <a href="${joinUrl}" class="btn" style="color: white;">
+            Join Interview Arena →
+          </a>
+        </div>
+        <div class="footer">
+          © 2026 CodeStorm. This is an automated invitation.
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  // 1. Try sending via SMTP
+  if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+    try {
+      console.log('Sending Interview Invite via SMTP...');
+      const transporter = nodemailer.createTransport({
+        host: 'smtp.gmail.com',
+        port: 587,
+        secure: false,
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASS,
+        },
+      });
+
+      await transporter.sendMail({
+        from: `"CodeStorm Live" <${fromEmail}>`,
+        to: toEmail,
+        subject: `🎙️ Live Coding Interview Invitation: ${interviewTitle}`,
+        html: htmlBody,
+      });
+      console.log(`✅ Interview invite sent to ${toEmail}`);
+      return;
+    } catch (smtpError) {
+      console.error('SMTP Invite sending failed, falling back to SES:', smtpError.message);
+    }
+  }
+
+  // 2. SES Fallback
+  console.log('Sending Interview Invite via AWS SES...');
+  const command = new SendEmailCommand({
+    Destination: { ToAddresses: [toEmail] },
+    Message: {
+      Body: { Html: { Charset: 'UTF-8', Data: htmlBody } },
+      Subject: { Charset: 'UTF-8', Data: `🎙️ Live Coding Interview Invitation: ${interviewTitle}` }
+    },
+    Source: `"CodeStorm Live" <${fromEmail}>`
+  });
+  await sesClient.send(command);
+  console.log(`✅ Interview invite sent successfully via AWS SES to ${toEmail}`);
+};
+
+module.exports = { sendContestCredentials, sendInterviewInvitation };
