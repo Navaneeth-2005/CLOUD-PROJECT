@@ -1,5 +1,6 @@
 const { SendEmailCommand } = require('@aws-sdk/client-ses');
 const { sesClient } = require('./aws');
+const nodemailer = require('nodemailer');
 require('dotenv').config();
 
 const sendContestCredentials = async (
@@ -285,6 +286,37 @@ const sendContestCredentials = async (
     </html>
   `;
 
+  // 1. Try sending via Nodemailer SMTP first (Highly robust fallback for Sandbox limitations)
+  if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+    try {
+      console.log('Attempting to send email via SMTP (Nodemailer)...');
+      const transporter = nodemailer.createTransport({
+        host: 'smtp.gmail.com',
+        port: 587,
+        secure: false, // TLS
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASS,
+        },
+      });
+
+      const mailOptions = {
+        from: `"CodeStorm" <${fromEmail}>`,
+        to: toEmail,
+        subject: `🎯 You're registered for ${contestTitle} — CodeStorm`,
+        html: htmlBody,
+      };
+
+      await transporter.sendMail(mailOptions);
+      console.log(`✅ Email sent successfully via Nodemailer SMTP to ${toEmail}`);
+      return;
+    } catch (smtpError) {
+      console.error('SMTP sending failed, falling back to AWS SES:', smtpError.message);
+    }
+  }
+
+  // 2. Fallback to AWS SES
+  console.log('Attempting to send email via AWS SES...');
   const command = new SendEmailCommand({
     Destination: {
       ToAddresses: [toEmail],
@@ -308,8 +340,7 @@ const sendContestCredentials = async (
   });
 
   await sesClient.send(command);
-
-  console.log(`Contest email sent successfully to ${toEmail}`);
+  console.log(`✅ Email sent successfully via AWS SES to ${toEmail}`);
 };
 
 module.exports = { sendContestCredentials };
