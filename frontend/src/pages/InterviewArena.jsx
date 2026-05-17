@@ -39,6 +39,10 @@ const InterviewArena = () => {
   const [voiceConnected, setVoiceConnected] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState('');
 
+  // Remote Selection state
+  const [remoteSelection, setRemoteSelection] = useState(null);
+  const [remoteUserName, setRemoteUserName] = useState('');
+
   const socketRef = useRef(null);
   const localStreamRef = useRef(null);
   const peerConnectionRef = useRef(null);
@@ -166,17 +170,19 @@ const InterviewArena = () => {
       setNotepadContent(content);
     });
 
-    // Cursor/Selection sync listener
-    socket.on('cursor-update', ({ id, selectionRange }) => {
-      if (textareaRef.current && selectionRange) {
-        // Prevent infinite loops by verifying selections differ
-        if (
-          textareaRef.current.selectionStart !== selectionRange.start ||
-          textareaRef.current.selectionEnd !== selectionRange.end
-        ) {
-          textareaRef.current.selectionStart = selectionRange.start;
-          textareaRef.current.selectionEnd = selectionRange.end;
-        }
+    // Cursor/Selection sync listener (Visual Highlight Overlay)
+    socket.on('cursor-update', ({ id, selectionRange, name }) => {
+      if (selectionRange && selectionRange.start !== selectionRange.end) {
+        setRemoteSelection(selectionRange);
+        setRemoteUserName(name);
+        
+        // Auto-clear selection highlight after 5 seconds of inactivity
+        if (window.selectionTimeout) clearTimeout(window.selectionTimeout);
+        window.selectionTimeout = setTimeout(() => {
+          setRemoteSelection(null);
+        }, 5000);
+      } else {
+        setRemoteSelection(null);
       }
     });
 
@@ -617,8 +623,8 @@ const InterviewArena = () => {
 
         {/* Right Side: Collaborative Notepad Scratchpad */}
         <main style={styles.mainArea}>
-          <div style={styles.notepadContainer}>
-            <div style={styles.notepadHeader}>
+          <div style={{ ...styles.notepadContainer, position: 'relative' }}>
+            <div style={{ ...styles.notepadHeader, zIndex: 10 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span style={{ height: '8px', width: '8px', borderRadius: '50%', background: '#00e5ff' }} />
                 <span style={styles.notepadTitle}>
@@ -630,17 +636,67 @@ const InterviewArena = () => {
               </span>
             </div>
             
-            {/* Real-time sync textarea */}
-            <textarea
-              ref={textareaRef}
-              value={notepadContent}
-              onChange={handleNotepadChange}
-              onSelect={handleTextareaSelect}
-              style={styles.textarea}
-              placeholder="// Welcome to your collaborative interview scratchpad!
+            <div style={{ position: 'relative', flex: 1, overflow: 'hidden' }}>
+              {/* Remote Selection Highlight Underlay */}
+              {remoteSelection && notepadContent && (
+                <div style={{
+                  ...styles.textarea,
+                  position: 'absolute',
+                  top: 0, left: 0, right: 0, bottom: 0,
+                  color: 'transparent',
+                  pointerEvents: 'none',
+                  zIndex: 1,
+                  whiteSpace: 'pre-wrap',
+                  wordWrap: 'break-word',
+                  overflow: 'hidden'
+                }}>
+                  {notepadContent.substring(0, remoteSelection.start)}
+                  <mark style={{
+                    background: 'rgba(0, 229, 255, 0.3)',
+                    color: 'transparent',
+                    borderRadius: '3px',
+                    position: 'relative'
+                  }}>
+                    {notepadContent.substring(remoteSelection.start, remoteSelection.end)}
+                    <span style={{
+                      position: 'absolute',
+                      top: '-18px',
+                      left: '0',
+                      background: '#00e5ff',
+                      color: '#000',
+                      fontSize: '10px',
+                      fontWeight: 'bold',
+                      padding: '2px 6px',
+                      borderRadius: '4px',
+                      whiteSpace: 'nowrap'
+                    }}>
+                      {remoteUserName} selected
+                    </span>
+                  </mark>
+                  {notepadContent.substring(remoteSelection.end)}
+                </div>
+              )}
+
+              {/* Real-time sync textarea */}
+              <textarea
+                ref={textareaRef}
+                value={notepadContent}
+                onChange={handleNotepadChange}
+                onSelect={handleTextareaSelect}
+                style={{
+                  ...styles.textarea,
+                  position: 'relative',
+                  zIndex: 2,
+                  background: 'transparent',
+                  width: '100%',
+                  height: '100%',
+                  boxSizing: 'border-box'
+                }}
+                placeholder="// Welcome to your collaborative interview scratchpad!
 // Start jotting down details, outlining logic, or explaining algorithms here.
 // Everything typed here is instantly synchronized between both screens!"
-            />
+              />
+            </div>
           </div>
         </main>
       </div>
