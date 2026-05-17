@@ -23,7 +23,7 @@ spec:
         - containerPort: 5000
         env:
         - name: FRONTEND_URL
-          value: "https://main.d12fcuor69h74.amplifyapp.com"
+          value: "https://main.d12fcuor69h74l.amplifyapp.com"
         envFrom:
         - secretRef:
             name: codestorm-secrets
