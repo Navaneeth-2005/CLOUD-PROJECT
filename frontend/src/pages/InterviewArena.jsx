@@ -313,8 +313,11 @@ const InterviewArena = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0a051b] text-white">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-cyan-400"></div>
+      <div style={styles.loader}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '40px', marginBottom: '16px' }}>⚡</div>
+          <div>Syncing Collaborative Arena...</div>
+        </div>
       </div>
     );
   }
@@ -322,34 +325,46 @@ const InterviewArena = () => {
   // 7. Join Overlay / Landing Screen
   if (!joined) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#050212] px-4">
-        <div className="w-full max-w-md bg-white/5 backdrop-blur-xl border border-white/10 p-8 rounded-2xl shadow-2xl">
-          <h2 className="text-2xl font-extrabold text-white text-center mb-6">⚡ Join Interview Room</h2>
-          <div className="mb-4">
-            <label className="block text-xs font-bold uppercase text-cyan-400 mb-2">Interview Title</label>
-            <div className="text-white bg-white/10 p-3 rounded-lg border border-white/5 font-semibold">
+      <div style={styles.landingOverlay}>
+        <div style={styles.landingCard}>
+          <h2 style={styles.landingTitle}>🎙️ Join Interview Room</h2>
+          
+          <div style={styles.formGroup}>
+            <label style={styles.formLabel}>Interview Title</label>
+            <div style={styles.staticVal}>
               {session?.title}
             </div>
           </div>
-          <div className="mb-4">
-            <label className="block text-xs font-bold uppercase text-cyan-400 mb-2">Interviewer</label>
-            <div className="text-gray-300 bg-white/5 p-3 rounded-lg text-sm">
+
+          <div style={styles.formGroup}>
+            <label style={styles.formLabel}>Interviewer</label>
+            <div style={styles.staticValSub}>
               {session?.interviewer?.name} ({session?.interviewer?.email})
             </div>
           </div>
-          <div className="mb-6">
-            <label className="block text-xs font-bold uppercase text-cyan-400 mb-2">Your Display Name</label>
+
+          <div style={styles.formGroup}>
+            <label style={styles.formLabel}>Your Display Name</label>
             <input
               type="text"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
-              className="w-full bg-white/15 border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-cyan-400 transition"
+              style={styles.input}
               placeholder="e.g. Navaneeth"
             />
           </div>
+
           <button
             onClick={handleJoinArena}
-            className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:shadow-lg hover:shadow-cyan-500/20 transform hover:-translate-y-0.5 transition"
+            style={styles.btnPrimary}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.boxShadow = '0 6px 20px rgba(0, 229, 255, 0.5)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 4px 15px rgba(0, 229, 255, 0.3)';
+            }}
           >
             Enter Interview Arena →
           </button>
@@ -360,51 +375,57 @@ const InterviewArena = () => {
 
   // 8. Main Collaborative Interview Arena Interface
   return (
-    <div className="min-h-screen bg-[#050212] flex flex-col text-white">
+    <div style={styles.page}>
       {/* Hidden Audio Elements for Peer Streams */}
       <audio ref={remoteAudioRef} autoPlay />
 
       {/* Header Panel */}
-      <header className="bg-white/5 border-b border-white/10 px-8 py-4 flex items-center justify-between backdrop-blur-md">
+      <header style={styles.header}>
         <div>
-          <span className="text-xs font-bold text-cyan-400 uppercase tracking-widest">LIVE SESSION</span>
-          <h1 className="text-xl font-black text-white">{session?.title}</h1>
+          <span style={styles.headerSubtitle}>LIVE COLLABORATIVE SESSION</span>
+          <h1 style={styles.headerTitle}>{session?.title}</h1>
         </div>
 
         {/* Live Timer and Session Control Center */}
-        <div className="flex items-center gap-4">
+        <div style={styles.controlCenter}>
           {session?.status === 'active' ? (
-            <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-full px-4 py-1.5 text-cyan-400 font-bold text-sm tracking-widest animate-pulse">
+            <div style={styles.timerBadge}>
               ⏱️ {timeRemaining}
             </div>
           ) : (
-            <div className="bg-amber-500/10 border border-amber-500/30 rounded-full px-4 py-1.5 text-amber-400 font-bold text-sm tracking-widest">
+            <div style={styles.timerBadgeWaiting}>
               ⏳ Waiting to Start
             </div>
           )}
 
           {/* Interviewer Command Actions */}
           {role === 'company' && (
-            <div className="flex gap-2">
+            <div style={styles.actionBtnGroup}>
               {session?.status !== 'active' && (
                 <button
                   onClick={handleStartInterview}
-                  className="bg-emerald-600 hover:bg-emerald-500 text-xs font-bold uppercase py-2 px-4 rounded-lg transition"
+                  style={styles.btnStart}
+                  onMouseEnter={(e) => e.currentTarget.style.filter = 'brightness(1.1)'}
+                  onMouseLeave={(e) => e.currentTarget.style.filter = 'brightness(1)'}
                 >
-                  🚀 Start Interview
+                  🚀 Start Session
                 </button>
               )}
               <button
                 onClick={handleExtendInterview}
-                className="bg-cyan-600 hover:bg-cyan-500 text-xs font-bold uppercase py-2 px-4 rounded-lg transition"
+                style={styles.btnExtend}
+                onMouseEnter={(e) => e.currentTarget.style.filter = 'brightness(1.1)'}
+                onMouseLeave={(e) => e.currentTarget.style.filter = 'brightness(1)'}
               >
                 ⏳ Extend Time
               </button>
               <button
                 onClick={handleEndInterview}
-                className="bg-rose-600 hover:bg-rose-500 text-xs font-bold uppercase py-2 px-4 rounded-lg transition"
+                style={styles.btnEnd}
+                onMouseEnter={(e) => e.currentTarget.style.filter = 'brightness(1.1)'}
+                onMouseLeave={(e) => e.currentTarget.style.filter = 'brightness(1)'}
               >
-                🛑 End Session
+                🛑 End Interview
               </button>
             </div>
           )}
@@ -412,22 +433,22 @@ const InterviewArena = () => {
       </header>
 
       {/* Core Split Screen Arena */}
-      <div className="flex-1 flex overflow-hidden">
+      <div style={styles.arenaLayout}>
         {/* Left Side: Voice, Room Vitals & User Status */}
-        <aside className="w-1/4 bg-white/5 border-r border-white/10 p-6 flex flex-col gap-6 overflow-y-auto">
+        <aside style={styles.sidebar}>
           {/* WebRTC Audio status card */}
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
-            <h3 className="text-sm font-bold text-cyan-400 uppercase tracking-wider mb-4">🎙️ Live Voice Room</h3>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className={`h-3.5 w-3.5 rounded-full ${voiceConnected ? 'bg-emerald-400 animate-ping' : 'bg-rose-400'}`} />
-                <span className="text-sm font-medium text-gray-200">
-                  {voiceConnected ? 'P2P Audio Connected' : 'Waiting for connection'}
+          <div style={styles.sideCard}>
+            <h3 style={styles.sideCardTitle}>🎙️ Live Voice Room</h3>
+            <div style={styles.voiceStatusRow}>
+              <div style={styles.voiceIndicator}>
+                <div style={voiceConnected ? styles.pulseDot : styles.pulseDotOff} />
+                <span>
+                  {voiceConnected ? 'Audio Live' : 'Audio Closed'}
                 </span>
               </div>
               <button
                 onClick={toggleMute}
-                className={`p-2.5 rounded-xl border transition ${muted ? 'bg-rose-500/20 border-rose-500 text-rose-400' : 'bg-cyan-500/10 border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/25'}`}
+                style={muted ? styles.btnMute : styles.btnUnmute}
               >
                 {muted ? '🔇 Muted' : '🎙️ Live'}
               </button>
@@ -435,32 +456,34 @@ const InterviewArena = () => {
           </div>
 
           {/* Active room participants card */}
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-5 flex-1 flex flex-col">
-            <h3 className="text-sm font-bold text-cyan-400 uppercase tracking-wider mb-4">👥 Active Arena Users</h3>
-            <div className="flex-1 space-y-3">
-              <div className="flex items-center gap-3 bg-white/10 p-3 rounded-xl border border-white/5">
-                <div className="h-8 w-8 rounded-full bg-cyan-500 flex items-center justify-center text-xs font-black">
+          <div style={{ ...styles.sideCard, flex: 1, display: 'flex', flexDirection: 'column' }}>
+            <h3 style={styles.sideCardTitle}>👥 Active Arena Users</h3>
+            <div style={styles.userList}>
+              <div style={styles.userBadge}>
+                <div style={styles.userInitials}>
                   ME
                 </div>
                 <div>
-                  <div className="text-sm font-semibold">{displayName}</div>
-                  <div className="text-xxs font-bold text-cyan-400 uppercase">{role} (Host)</div>
+                  <div style={styles.userName}>{displayName}</div>
+                  <div style={styles.userRole}>{role}</div>
                 </div>
               </div>
+              
               {peers.map((peer) => (
-                <div key={peer.id} className="flex items-center gap-3 bg-white/5 p-3 rounded-xl border border-white/5">
-                  <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center text-xs font-black">
-                    {peer.name[0].toUpperCase()}
+                <div key={peer.id} style={styles.userBadge}>
+                  <div style={{ ...styles.userInitials, background: '#a855f7' }}>
+                    {peer.name ? peer.name[0].toUpperCase() : 'C'}
                   </div>
                   <div>
-                    <div className="text-sm font-semibold">{peer.name}</div>
-                    <div className="text-xxs font-bold text-blue-400 uppercase">{peer.role}</div>
+                    <div style={styles.userName}>{peer.name}</div>
+                    <div style={styles.userRole}>{peer.role}</div>
                   </div>
                 </div>
               ))}
+
               {peers.length === 0 && (
-                <div className="text-xs text-gray-500 text-center py-6">
-                  Waiting for other peer to join...
+                <div style={{ fontSize: '11px', color: '#94a3b8', textAlign: 'center', marginTop: '24px' }}>
+                  ⏳ Waiting for peers...
                 </div>
               )}
             </div>
@@ -468,17 +491,17 @@ const InterviewArena = () => {
         </aside>
 
         {/* Right Side: Collaborative Notepad Scratchpad */}
-        <main className="flex-1 flex flex-col p-6">
-          <div className="flex-1 flex flex-col bg-white/5 border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
-            <div className="bg-white/10 px-6 py-3 border-b border-white/5 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-cyan-400 animate-pulse" />
-                <span className="text-xs font-extrabold uppercase tracking-widest text-cyan-400">
+        <main style={styles.mainArea}>
+          <div style={styles.notepadContainer}>
+            <div style={styles.notepadHeader}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ height: '8px', width: '8px', borderRadius: '50%', background: '#00e5ff' }} />
+                <span style={styles.notepadTitle}>
                   Shared Live Notepad & Scratchpad
                 </span>
               </div>
-              <span className="text-xxs font-semibold text-gray-400">
-                Both of you can write, edit, and paste dynamically in real-time
+              <span style={styles.notepadSub}>
+                Real-time synchronized collaborative peer environment
               </span>
             </div>
             
@@ -486,7 +509,7 @@ const InterviewArena = () => {
             <textarea
               value={notepadContent}
               onChange={handleNotepadChange}
-              className="flex-1 w-full bg-transparent p-6 text-gray-100 font-mono text-sm leading-relaxed border-none focus:outline-none resize-none"
+              style={styles.textarea}
               placeholder="// Welcome to your collaborative interview scratchpad!
 // Start jotting down details, outlining logic, or explaining algorithms here.
 // Everything typed here is instantly synchronized between both screens!"
@@ -496,6 +519,351 @@ const InterviewArena = () => {
       </div>
     </div>
   );
+};
+
+const styles = {
+  page: {
+    minHeight: '100vh',
+    background: '#09051b',
+    fontFamily: "'Outfit', 'Inter', sans-serif",
+    color: '#ffffff',
+    display: 'flex',
+    flexDirection: 'column',
+  },
+  loader: {
+    minHeight: '100vh',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    background: '#050212',
+    color: '#00e5ff',
+    fontSize: '18px',
+    fontWeight: 'bold',
+    fontFamily: "'Outfit', 'Inter', sans-serif",
+  },
+  landingOverlay: {
+    minHeight: '100vh',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    background: 'radial-gradient(circle at center, #160a30 0%, #050212 100%)',
+    padding: '24px',
+    fontFamily: "'Outfit', 'Inter', sans-serif",
+  },
+  landingCard: {
+    width: '100%',
+    maxWidth: '440px',
+    background: 'rgba(255, 255, 255, 0.03)',
+    backdropFilter: 'blur(20px)',
+    border: '1px solid rgba(255, 255, 255, 0.08)',
+    padding: '36px',
+    borderRadius: '24px',
+    boxShadow: '0 20px 50px rgba(0, 0, 0, 0.4)',
+  },
+  landingTitle: {
+    fontSize: '24px',
+    fontWeight: '800',
+    textAlign: 'center',
+    marginBottom: '28px',
+    color: '#ffffff',
+    marginTop: 0,
+  },
+  formGroup: {
+    marginBottom: '20px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px',
+  },
+  formLabel: {
+    fontSize: '11px',
+    fontWeight: 'bold',
+    textTransform: 'uppercase',
+    letterSpacing: '1px',
+    color: '#00e5ff',
+  },
+  staticVal: {
+    background: 'rgba(255, 255, 255, 0.06)',
+    border: '1px solid rgba(255, 255, 255, 0.04)',
+    borderRadius: '12px',
+    padding: '12px 16px',
+    fontSize: '14px',
+    fontWeight: '600',
+    color: '#ffffff',
+  },
+  staticValSub: {
+    background: 'rgba(255, 255, 255, 0.03)',
+    borderRadius: '12px',
+    padding: '12px 16px',
+    fontSize: '13px',
+    color: '#cbd5e1',
+  },
+  input: {
+    background: 'rgba(255, 255, 255, 0.08)',
+    border: '1px solid rgba(255, 255, 255, 0.15)',
+    borderRadius: '12px',
+    padding: '12px 16px',
+    fontSize: '14px',
+    color: '#ffffff',
+    outline: 'none',
+    transition: 'border 0.2s',
+  },
+  btnPrimary: {
+    width: '100%',
+    padding: '14px 20px',
+    background: 'linear-gradient(135deg, #00e5ff, #0077ff)',
+    border: 'none',
+    borderRadius: '12px',
+    color: '#ffffff',
+    fontSize: '15px',
+    fontWeight: 'bold',
+    cursor: 'pointer',
+    boxShadow: '0 4px 15px rgba(0, 229, 255, 0.3)',
+    transition: 'all 0.2s',
+    marginTop: '8px',
+  },
+  header: {
+    background: 'rgba(255, 255, 255, 0.02)',
+    backdropFilter: 'blur(10px)',
+    borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+    padding: '16px 32px',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  headerTitle: {
+    fontSize: '22px',
+    fontWeight: '800',
+    color: '#ffffff',
+    margin: 0,
+    marginTop: '4px',
+  },
+  headerSubtitle: {
+    fontSize: '10px',
+    fontWeight: 'bold',
+    color: '#00e5ff',
+    textTransform: 'uppercase',
+    letterSpacing: '1.5px',
+  },
+  controlCenter: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '16px',
+  },
+  timerBadge: {
+    background: 'rgba(0, 229, 255, 0.08)',
+    border: '1px solid rgba(0, 229, 255, 0.2)',
+    borderRadius: '20px',
+    padding: '8px 16px',
+    fontSize: '13px',
+    fontWeight: 'bold',
+    color: '#00e5ff',
+    letterSpacing: '1px',
+  },
+  timerBadgeWaiting: {
+    background: 'rgba(245, 158, 11, 0.08)',
+    border: '1px solid rgba(245, 158, 11, 0.2)',
+    borderRadius: '20px',
+    padding: '8px 16px',
+    fontSize: '13px',
+    fontWeight: 'bold',
+    color: '#f59e0b',
+    letterSpacing: '1px',
+  },
+  actionBtnGroup: {
+    display: 'flex',
+    gap: '8px',
+  },
+  btnStart: {
+    background: '#10b981',
+    border: 'none',
+    borderRadius: '8px',
+    padding: '8px 16px',
+    color: '#ffffff',
+    fontSize: '12px',
+    fontWeight: 'bold',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+  },
+  btnExtend: {
+    background: '#0288d1',
+    border: 'none',
+    borderRadius: '8px',
+    padding: '8px 16px',
+    color: '#ffffff',
+    fontSize: '12px',
+    fontWeight: 'bold',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+  },
+  btnEnd: {
+    background: '#ef4444',
+    border: 'none',
+    borderRadius: '8px',
+    padding: '8px 16px',
+    color: '#ffffff',
+    fontSize: '12px',
+    fontWeight: 'bold',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+  },
+  arenaLayout: {
+    display: 'flex',
+    flexDirection: 'row',
+    flex: 1,
+    overflow: 'hidden',
+  },
+  sidebar: {
+    width: '300px',
+    background: 'rgba(255, 255, 255, 0.01)',
+    borderRight: '1px solid rgba(255, 255, 255, 0.08)',
+    padding: '24px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '24px',
+    overflowY: 'auto',
+  },
+  sideCard: {
+    background: 'rgba(255, 255, 255, 0.03)',
+    border: '1px solid rgba(255, 255, 255, 0.06)',
+    borderRadius: '16px',
+    padding: '16px',
+  },
+  sideCardTitle: {
+    fontSize: '12px',
+    fontWeight: 'bold',
+    textTransform: 'uppercase',
+    letterSpacing: '1px',
+    color: '#00e5ff',
+    marginBottom: '16px',
+    marginTop: 0,
+  },
+  voiceStatusRow: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  voiceIndicator: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    fontSize: '13px',
+    fontWeight: '500',
+  },
+  pulseDot: {
+    width: '10px',
+    height: '10px',
+    borderRadius: '50%',
+    background: '#10b981',
+    boxShadow: '0 0 8px #10b981',
+  },
+  pulseDotOff: {
+    width: '10px',
+    height: '10px',
+    borderRadius: '50%',
+    background: '#ef4444',
+  },
+  btnMute: {
+    background: 'rgba(239, 68, 68, 0.1)',
+    border: '1px solid #ef4444',
+    borderRadius: '8px',
+    padding: '6px 12px',
+    color: '#ef4444',
+    fontSize: '12px',
+    fontWeight: 'bold',
+    cursor: 'pointer',
+  },
+  btnUnmute: {
+    background: 'rgba(0, 229, 255, 0.1)',
+    border: '1px solid #00e5ff',
+    borderRadius: '8px',
+    padding: '6px 12px',
+    color: '#00e5ff',
+    fontSize: '12px',
+    fontWeight: 'bold',
+    cursor: 'pointer',
+  },
+  userList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px',
+  },
+  userBadge: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    background: 'rgba(255, 255, 255, 0.05)',
+    padding: '12px',
+    borderRadius: '12px',
+    border: '1px solid rgba(255, 255, 255, 0.03)',
+  },
+  userInitials: {
+    width: '32px',
+    height: '32px',
+    borderRadius: '50%',
+    background: '#0077ff',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '12px',
+    fontWeight: '900',
+  },
+  userName: {
+    fontSize: '13px',
+    fontWeight: '600',
+  },
+  userRole: {
+    fontSize: '10px',
+    fontWeight: 'bold',
+    color: '#00e5ff',
+    textTransform: 'uppercase',
+  },
+  mainArea: {
+    flex: 1,
+    padding: '24px',
+    display: 'flex',
+    flexDirection: 'column',
+  },
+  notepadContainer: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    background: 'rgba(255, 255, 255, 0.02)',
+    border: '1px solid rgba(255, 255, 255, 0.08)',
+    borderRadius: '24px',
+    overflow: 'hidden',
+    boxShadow: '0 20px 40px rgba(0, 0, 0, 0.3)',
+  },
+  notepadHeader: {
+    background: 'rgba(255, 255, 255, 0.04)',
+    padding: '12px 24px',
+    borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  notepadTitle: {
+    fontSize: '11px',
+    fontWeight: 'bold',
+    textTransform: 'uppercase',
+    letterSpacing: '1.5px',
+    color: '#00e5ff',
+  },
+  notepadSub: {
+    fontSize: '10px',
+    color: '#94a3b8',
+  },
+  textarea: {
+    flex: 1,
+    background: 'transparent',
+    border: 'none',
+    outline: 'none',
+    padding: '24px',
+    color: '#e2e8f0',
+    fontFamily: "'Fira Code', 'Courier New', Courier, monospace",
+    fontSize: '14px',
+    lineHeight: '1.6',
+    resize: 'none',
+  }
 };
 
 export default InterviewArena;
