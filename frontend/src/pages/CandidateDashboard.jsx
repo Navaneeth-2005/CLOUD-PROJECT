@@ -15,6 +15,7 @@ const CandidateDashboard = () => {
   const [hoveredCard, setHoveredCard] = useState(null);
   const [registeredContests, setRegisteredContests] = useState([]);
   const [registeringId, setRegisteringId] = useState(null);
+  const [submittedContests, setSubmittedContests] = useState([]);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [selectedContest, setSelectedContest] = useState(null);
   const [regForm, setRegForm] = useState({
@@ -67,6 +68,11 @@ const CandidateDashboard = () => {
         .filter((_, i) => results[i].data.isRegistered)
         .map(c => c.id);
       setRegisteredContests(registeredIds);
+
+      const submittedIds = contests
+        .filter((_, i) => results[i].data.submittedAt)
+        .map(c => c.id);
+      setSubmittedContests(submittedIds);
     } catch (err) {
       console.error('Failed to check registrations');
     }
@@ -128,11 +134,14 @@ const CandidateDashboard = () => {
     }
   };
 
-  const getButtonConfig = (status, isRegistered) => {
+  const getButtonConfig = (status, isRegistered, isSubmitted) => {
     const isEnded = status.label === 'Ended';
     const isLive = status.label === 'Live';
     const isUpcoming = status.label === 'Upcoming';
 
+    if (isSubmitted) {
+      return { label: '✓ Submitted', bg: 'linear-gradient(135deg, #6b7280, #4b5563)', opacity: 0.7, cursor: 'not-allowed' };
+    }
     if (isEnded) {
       return { label: '🏁 Ended', bg: '#e0e0e0', opacity: 0.5, cursor: 'not-allowed' };
     }
@@ -264,7 +273,8 @@ const CandidateDashboard = () => {
                   const isLive = status.label === 'Live';
                   const isEnded = status.label === 'Ended';
                   const isRegistered = registeredContests.includes(contest.id);
-                  const btnConfig = getButtonConfig(status, isRegistered);
+                  const isSubmitted = submittedContests.includes(contest.id);
+                  const btnConfig = getButtonConfig(status, isRegistered, isSubmitted);
 
                   return (
                     <div
@@ -289,8 +299,11 @@ const CandidateDashboard = () => {
                           {status.label === 'Live' && '● '}{status.label}
                         </span>
                         <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                          {isRegistered && (
+                          {isRegistered && !isSubmitted && (
                             <span style={styles.registeredBadge}>✓ Registered</span>
+                          )}
+                          {isSubmitted && (
+                            <span style={{ ...styles.registeredBadge, background: '#e5e7eb', color: '#6b7280' }}>✓ Submitted</span>
                           )}
                           <span style={styles.questionCount}>
                             {contest.questions?.length || 0} questions
@@ -336,6 +349,10 @@ const CandidateDashboard = () => {
                             cursor: btnConfig.cursor
                           }}
                           onClick={() => {
+                            if (isSubmitted) {
+                              toast.info('You have already submitted this contest!');
+                              return;
+                            }
                             if (isEnded) {
                               toast.info('This contest has ended!');
                               return;

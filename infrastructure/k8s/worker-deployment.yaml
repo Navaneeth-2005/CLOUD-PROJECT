@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: codestorm-worker
+  labels:
+    app: codestorm-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: codestorm-worker
+  template:
+    metadata:
+      labels:
+        app: codestorm-worker
+    spec:
+      containers:
+      - name: worker
+        image: 673515369025.dkr.ecr.ap-south-1.amazonaws.com/codestorm-prod-worker:latest
+        envFrom:
+        - secretRef:
+            name: codestorm-secrets

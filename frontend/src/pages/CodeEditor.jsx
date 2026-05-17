@@ -20,6 +20,8 @@ const CodeEditor = () => {
   const [questions, setQuestions] = useState([]);
   const [activePanel, setActivePanel] = useState('problem');
   const [showExitModal, setShowExitModal] = useState(false);
+  const [showSubmitContestModal, setShowSubmitContestModal] = useState(false);
+  const [submittingContest, setSubmittingContest] = useState(false);
   const timerRef = useRef(null);
   const tabSwitchCount = useRef(0);
 
@@ -270,6 +272,22 @@ int main() {
     }, 2000);
   };
 
+  const handleSubmitContest = async () => {
+    setSubmittingContest(true);
+    try {
+      const res = await API.post('/registration/submit-contest', {
+        contestId: parseInt(contestId)
+      });
+      toast.success(`Contest submitted! Final Score: ${res.data.finalScore} pts 🎉`);
+      setShowSubmitContestModal(false);
+      navigate('/candidate/dashboard');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to submit contest');
+    } finally {
+      setSubmittingContest(false);
+    }
+  };
+
   const getStatusStyle = (status) => {
     switch (status) {
       case 'accepted': return { color: '#10b981', bg: '#d1fae5', icon: '✅' };
@@ -364,6 +382,14 @@ int main() {
                 <span style={styles.spinner} /> Submitting...
               </span>
             ) : '▶ Submit Code'}
+          </button>
+          <button
+            style={styles.submitContestBtn}
+            onClick={() => setShowSubmitContestModal(true)}
+            onMouseEnter={e => e.currentTarget.style.background = 'linear-gradient(135deg, #dc2626, #b91c1c)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)'}
+          >
+            🏁 Submit Contest
           </button>
         </div>
       </div>
@@ -679,6 +705,41 @@ int main() {
           </div>
         </div>
       )}
+
+      {/* Submit Contest Modal */}
+      {showSubmitContestModal && (
+        <div style={styles.overlay} onClick={() => setShowSubmitContestModal(false)}>
+          <div style={styles.exitModal} onClick={e => e.stopPropagation()}>
+            <div style={styles.exitIcon}>🏁</div>
+            <h2 style={styles.exitTitle}>Submit Contest?</h2>
+            <p style={styles.exitDesc}>
+              Are you sure you want to finalize and submit your contest?
+              Your best scores for each question will be sent to the company.
+            </p>
+            <div style={styles.exitWarningBox}>
+              <p style={styles.exitWarningText}>
+                🚨 This action is permanent. You will NOT be able to re-enter
+                this contest or make any more submissions after submitting.
+              </p>
+            </div>
+            <div style={styles.exitActions}>
+              <button
+                style={styles.stayBtn}
+                onClick={() => setShowSubmitContestModal(false)}
+              >
+                Continue Coding
+              </button>
+              <button
+                style={{ ...styles.leaveBtn, opacity: submittingContest ? 0.6 : 1 }}
+                onClick={handleSubmitContest}
+                disabled={submittingContest}
+              >
+                {submittingContest ? 'Submitting...' : '✓ Submit Contest'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -789,6 +850,18 @@ const styles = {
     borderRadius: '50%',
     display: 'inline-block',
     animation: 'spin 0.8s linear infinite'
+  },
+  submitContestBtn: {
+    background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+    border: 'none',
+    color: 'white',
+    padding: '8px 18px',
+    borderRadius: '10px',
+    fontSize: '13px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    transition: 'all 0.3s',
+    boxShadow: '0 4px 15px rgba(239,68,68,0.3)'
   },
   mainLayout: {
     display: 'flex',

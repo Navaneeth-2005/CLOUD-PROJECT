@@ -3,6 +3,13 @@ const { exec } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const { Sequelize, DataTypes } = require('sequelize');
+const { SQSClient, ReceiveMessageCommand, DeleteMessageCommand } = require('@aws-sdk/client-sqs');
+const { S3Client, GetObjectCommand } = require('@aws-sdk/client-s3');
+
+const sqsRegion = process.env.AWS_REGION || 'ap-south-1';
+const sqsClient = new SQSClient({ region: sqsRegion });
+const s3Client = new S3Client({ region: sqsRegion });
+const queueUrl = process.env.SQS_QUEUE_URL;
 
 // Database connection
 const sequelize = new Sequelize(
@@ -54,45 +61,17 @@ const TestCase = sequelize.define('TestCase', {
 // Language config
 const languageConfig = {
   python: {
-    image: 'python:3.11-alpine',
-    filename: 'solution.py',
-    runCmd: 'python /code/solution.py'
+    filename: 'solution.py'
   },
   java: {
-    image: 'eclipse-temurin:17-jdk',
-    filename: 'Solution.java',
-    runCmd: 'javac /code/Solution.java && java -cp /code Solution'
+    filename: 'Solution.java'
   },
   'c++': {
-    image: 'gcc:latest',
-    filename: 'solution.cpp',
-    runCmd: 'g++ -o /code/solution /code/solution.cpp && /code/solution'
+    filename: 'solution.cpp'
   }
 };
 
-// Pre-pull Docker images so first execution does not timeout
-const pullImages = async () => {
-  console.log('📦 Pulling Docker images...');
-  const images = [
-    'python:3.11-alpine',
-    'eclipse-temurin:17-jdk',
-    'gcc:latest'
-  ];
-  for (const image of images) {
-    await new Promise((resolve) => {
-      exec(`docker pull ${image}`, (err, stdout, stderr) => {
-        if (err) {
-          console.log(`⚠️  Could not pull ${image}: ${err.message}`);
-        } else {
-          console.log(`✅ Pulled ${image}`);
-        }
-        resolve();
-      });
-    });
-  }
-};
-
-// Execute code using docker cp approach — no volume mounts
+// Execute code using direct child_process.exec
 const executeCode = (language, code, input) => {
   return new Promise((resolve) => {
     const config = languageConfig[language];
@@ -101,144 +80,57 @@ const executeCode = (language, code, input) => {
     }
 
     const uniqueId = `cs_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
-    const containerName = `runner_${uniqueId}`;
     const startTime = Date.now();
 
-    // Step 1 — Start a long-lived container
-    const startCmd = [
-      'docker run -d',
-      `--name ${containerName}`,
-      '--memory="128m"',
-      '--cpus="0.5"',
-      '--network none',
-      '--ulimit nproc=50',
-      '--ulimit fsize=1000000',
-      config.image,
-      'sh -c "sleep 60"'
-    ].join(' ');
+    const tmpDir = `/tmp/${uniqueId}`;
+    try {
+      fs.mkdirSync(tmpDir, { recursive: true });
+      const codeFile = path.join(tmpDir, config.filename);
+      const inputFile = path.join(tmpDir, 'input.txt');
+      
+      fs.writeFileSync(codeFile, code, 'utf8');
+      fs.writeFileSync(inputFile, (input && input.trim()) ? input : '\n', 'utf8');
 
-    console.log(`  🐳 Starting container: ${containerName}`);
+      // Adjust run command to work from tmpDir natively
+      let runCmd = '';
+      if (language === 'python') runCmd = `python3 ${codeFile} < ${inputFile}`;
+      else if (language === 'java') runCmd = `cd ${tmpDir} && javac ${config.filename} && java Solution < input.txt`;
+      else if (language === 'c++') runCmd = `cd ${tmpDir} && g++ -o solution ${config.filename} && ./solution < input.txt`;
 
-    exec(startCmd, (startErr) => {
-      if (startErr) {
-        return resolve({
-          success: false,
-          output: '',
-          error: `Failed to start container: ${startErr.message}`,
-          time: 0
-        });
-      }
+      console.log(`  ▶️  Running natively: ${runCmd}`);
 
-      // Step 2 — Write code to a temp file and copy into container
-      const tmpCodeFile = `/tmp/${uniqueId}_${config.filename}`;
-      const tmpInputFile = `/tmp/${uniqueId}_input.txt`;
+      exec(runCmd, { timeout: 15000 }, (runErr, stdout, stderr) => {
+        const executionTime = Date.now() - startTime;
+        
+        // Cleanup temp files
+        exec(`rm -rf ${tmpDir}`, () => {});
 
-      try {
-        fs.writeFileSync(tmpCodeFile, code, 'utf8');
-        fs.writeFileSync(tmpInputFile, (input && input.trim()) ? input : '\n', 'utf8');
-      } catch (writeErr) {
-        exec(`docker rm -f ${containerName}`, () => {});
-        return resolve({
-          success: false,
-          output: '',
-          error: `Failed to write temp files: ${writeErr.message}`,
-          time: 0
-        });
-      }
-
-      console.log(`  📄 Code file size: ${fs.statSync(tmpCodeFile).size} bytes`);
-
-      // Create /code directory and copy files into container
-      exec(`docker exec ${containerName} mkdir -p /code`, (mkdirErr) => {
-        if (mkdirErr) {
-          exec(`docker rm -f ${containerName}`, () => {});
-          try { fs.unlinkSync(tmpCodeFile); fs.unlinkSync(tmpInputFile); } catch (e) {}
+        if (runErr) {
+          if (runErr.killed) {
+            return resolve({
+              success: false, output: '', error: 'Time Limit Exceeded (15s)', time: executionTime
+            });
+          }
           return resolve({
-            success: false, output: '',
-            error: `Failed to create /code dir: ${mkdirErr.message}`,
-            time: 0
+            success: false, output: '', error: (stderr || runErr.message || 'Unknown error').trim(), time: executionTime
           });
         }
 
-        // Copy code file
-        exec(`docker cp ${tmpCodeFile} ${containerName}:/code/${config.filename}`, (cpCodeErr) => {
-          if (cpCodeErr) {
-            exec(`docker rm -f ${containerName}`, () => {});
-            try { fs.unlinkSync(tmpCodeFile); fs.unlinkSync(tmpInputFile); } catch (e) {}
-            return resolve({
-              success: false, output: '',
-              error: `Failed to copy code: ${cpCodeErr.message}`,
-              time: 0
-            });
-          }
-
-          // Copy input file
-          exec(`docker cp ${tmpInputFile} ${containerName}:/code/input.txt`, (cpInputErr) => {
-            // Cleanup temp files
-            try { fs.unlinkSync(tmpCodeFile); fs.unlinkSync(tmpInputFile); } catch (e) {}
-
-            if (cpInputErr) {
-              exec(`docker rm -f ${containerName}`, () => {});
-              return resolve({
-                success: false, output: '',
-                error: `Failed to copy input: ${cpInputErr.message}`,
-                time: 0
-              });
-            }
-
-            console.log(`  ✅ Files copied into container`);
-
-            // Step 3 — Run the code with input
-            const runCmd = `docker exec ${containerName} sh -c "${config.runCmd} < /code/input.txt"`;
-            console.log(`  ▶️  Running: ${config.runCmd}`);
-
-            exec(runCmd, { timeout: 15000 }, (runErr, stdout, stderr) => {
-              const executionTime = Date.now() - startTime;
-
-              // Always cleanup container
-              exec(`docker rm -f ${containerName}`, () => {
-                console.log(`  🗑️  Container ${containerName} removed`);
-              });
-
-              if (runErr) {
-                if (runErr.killed) {
-                  return resolve({
-                    success: false,
-                    output: '',
-                    error: 'Time Limit Exceeded (15s) — Make sure your program reads input and produces output.',
-                    time: executionTime
-                  });
-                }
-                const errMsg = (stderr || runErr.message || 'Unknown error').trim();
-                return resolve({
-                  success: false,
-                  output: '',
-                  error: errMsg,
-                  time: executionTime
-                });
-              }
-
-              if (!stdout || stdout.trim() === '') {
-                return resolve({
-                  success: false,
-                  output: '',
-                  error: 'No output produced — Make sure your program prints the answer using print() / System.out.println() / cout',
-                  time: executionTime
-                });
-              }
-
-              console.log(`  📤 Output: "${stdout.trim()}"`);
-              resolve({
-                success: true,
-                output: stdout.trim(),
-                error: '',
-                time: executionTime
-              });
-            });
+        if (!stdout || stdout.trim() === '') {
+          return resolve({
+            success: false, output: '', error: 'No output produced', time: executionTime
           });
-        });
+        }
+
+        resolve({ success: true, output: stdout.trim(), error: '', time: executionTime });
       });
-    });
+
+    } catch (err) {
+      exec(`rm -rf ${tmpDir}`, () => {});
+      return resolve({
+        success: false, output: '', error: `Failed to setup execution: ${err.message}`, time: 0
+      });
+    }
   });
 };
 
@@ -250,7 +142,7 @@ const checkOutput = (actual, expected) => {
 };
 
 // Process a single submission
-const processSubmission = async (submissionId) => {
+const processSubmission = async (submissionId, overrideCode = null) => {
   console.log(`\n⚙️  Processing submission ${submissionId}...`);
 
   try {
@@ -312,7 +204,7 @@ const processSubmission = async (submissionId) => {
 
       const result = await executeCode(
         submission.language,
-        submission.code,
+        overrideCode || submission.code,
         testCase.input
       );
 
@@ -383,21 +275,72 @@ const processSubmission = async (submissionId) => {
 
 // Poll for pending submissions
 const pollForSubmissions = async () => {
-  try {
-    const pending = await Submission.findAll({
-      where: { status: 'pending' },
-      limit: 5,
-      order: [['createdAt', 'ASC']]
-    });
+  if (!queueUrl) {
+    // Fallback to DB polling if SQS is not configured
+    try {
+      const pending = await Submission.findAll({
+        where: { status: 'pending' },
+        limit: 5,
+        order: [['createdAt', 'ASC']]
+      });
 
-    if (pending.length > 0) {
-      console.log(`📋 Found ${pending.length} pending submission(s)`);
-      for (const submission of pending) {
-        await processSubmission(submission.id);
+      if (pending.length > 0) {
+        console.log(`📋 Found ${pending.length} pending submission(s) (DB Poll)`);
+        for (const submission of pending) {
+          await processSubmission(submission.id);
+        }
+      }
+    } catch (err) {
+      console.error('❌ DB Poll error:', err.message);
+    }
+    await new Promise(resolve => setTimeout(resolve, 3000));
+    return;
+  }
+
+  // SQS Long Polling
+  try {
+    const command = new ReceiveMessageCommand({
+      QueueUrl: queueUrl,
+      MaxNumberOfMessages: 5,
+      WaitTimeSeconds: 20 // Long polling
+    });
+    
+    const response = await sqsClient.send(command);
+    if (response.Messages && response.Messages.length > 0) {
+      console.log(`📋 Received ${response.Messages.length} submission(s) from SQS`);
+      for (const message of response.Messages) {
+        try {
+          const body = JSON.parse(message.Body);
+          if (body.submissionId) {
+            let executionCode = null;
+            if (body.s3Key && process.env.S3_BUCKET_NAME) {
+              try {
+                const getCmd = new GetObjectCommand({
+                  Bucket: process.env.S3_BUCKET_NAME,
+                  Key: body.s3Key
+                });
+                const { Body } = await s3Client.send(getCmd);
+                executionCode = await Body.transformToString();
+                console.log(`☁️ Fetched code from S3: ${body.s3Key}`);
+              } catch (s3Err) {
+                console.error('❌ Failed to fetch from S3:', s3Err.message);
+              }
+            }
+            await processSubmission(body.submissionId, executionCode);
+          }
+          // Delete message after processing
+          await sqsClient.send(new DeleteMessageCommand({
+            QueueUrl: queueUrl,
+            ReceiptHandle: message.ReceiptHandle
+          }));
+        } catch (msgErr) {
+          console.error('❌ Error processing SQS message:', msgErr.message);
+        }
       }
     }
   } catch (err) {
-    console.error('❌ Poll error:', err.message);
+    console.error('❌ SQS Receive error:', err.message);
+    await new Promise(resolve => setTimeout(resolve, 3000)); // Delay on error
   }
 };
 
@@ -424,11 +367,10 @@ const startWorker = async () => {
     process.exit(1);
   }
 
-  await pullImages();
-
-  console.log('⚙️  Worker polling for submissions every 3 seconds...');
-  setInterval(pollForSubmissions, 3000);
-  await pollForSubmissions();
+  console.log('⚙️  Worker polling for submissions...');
+  while (true) {
+    await pollForSubmissions();
+  }
 };
 
 startWorker();

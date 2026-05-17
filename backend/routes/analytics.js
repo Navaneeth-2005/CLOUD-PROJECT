@@ -17,7 +17,14 @@ router.get('/my-performance', authMiddleware, roleMiddleware('candidate'), async
     const rejected = await Submission.count({ where: { userId, status: 'rejected' } });
     const pending = await Submission.count({ where: { userId, status: 'pending' } });
 
-    const totalScore = await Submission.sum('score', { where: { userId, status: 'accepted' } });
+    const acceptedSubmissions = await Submission.findAll({ where: { userId, status: 'accepted' } });
+    const maxScorePerQuestion = {};
+    acceptedSubmissions.forEach(sub => {
+      if (!maxScorePerQuestion[sub.questionId] || sub.score > maxScorePerQuestion[sub.questionId]) {
+        maxScorePerQuestion[sub.questionId] = sub.score;
+      }
+    });
+    const totalScore = Object.values(maxScorePerQuestion).reduce((a, b) => a + b, 0);
 
     const byLanguage = await Submission.findAll({
       where: { userId },

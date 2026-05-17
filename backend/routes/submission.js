@@ -4,6 +4,10 @@ const Submission = require('../models/Submission');
 const Question = require('../models/Question');
 const Contest = require('../models/Contest');
 const { authMiddleware, roleMiddleware } = require('../middleware/auth');
+const { sqsClient, s3Client } = require('../config/aws');
+const { SendMessageCommand } = require('@aws-sdk/client-sqs');
+const { PutObjectCommand } = require('@aws-sdk/client-s3');
+const ContestRegistration = require('../models/ContestRegistration');
 
 // Submit code (only candidates)
 router.post('/submit', authMiddleware, roleMiddleware('candidate'), async (req, res) => {
@@ -28,6 +32,14 @@ router.post('/submit', authMiddleware, roleMiddleware('candidate'), async (req, 
       return res.status(400).json({ message: 'Contest is not active right now' });
     }
 
+    // Check if candidate already submitted (finalized) the contest
+    const registration = await ContestRegistration.findOne({
+      where: { userId: req.user.id, contestId }
+    });
+    if (registration && registration.submittedAt) {
+      return res.status(400).json({ message: 'You have already submitted this contest. No further submissions allowed.' });
+    }
+
     // Save submission with pending status
     const submission = await Submission.create({
       userId: req.user.id,
@@ -39,6 +51,35 @@ router.post('/submit', authMiddleware, roleMiddleware('candidate'), async (req, 
       totalTestCases: 0,
       testCasesPassed: 0
     });
+
+    // Send to SQS
+    let s3Key = null;
+    if (process.env.S3_BUCKET_NAME) {
+      try {
+        s3Key = `submissions/${contestId}/${questionId}/${req.user.id}_${Date.now()}.txt`;
+        await s3Client.send(new PutObjectCommand({
+          Bucket: process.env.S3_BUCKET_NAME,
+          Key: s3Key,
+          Body: code
+        }));
+        console.log(`☁️ Uploaded code to S3: ${s3Key}`);
+      } catch (s3Err) {
+        console.error('❌ Failed to upload to S3:', s3Err.message);
+      }
+    }
+
+    if (process.env.SQS_QUEUE_URL) {
+      try {
+        const command = new SendMessageCommand({
+          QueueUrl: process.env.SQS_QUEUE_URL,
+          MessageBody: JSON.stringify({ submissionId: submission.id, s3Key })
+        });
+        await sqsClient.send(command);
+        console.log(`📤 Enqueued submission ${submission.id} to SQS`);
+      } catch (sqsErr) {
+        console.error('❌ Failed to enqueue to SQS:', sqsErr.message);
+      }
+    }
 
     res.status(201).json({
       message: 'Code submitted successfully',

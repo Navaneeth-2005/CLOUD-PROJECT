@@ -14,45 +14,84 @@ router.get('/:contestId', authMiddleware, async (req, res) => {
       return res.status(404).json({ message: 'Contest not found' });
     }
 
-    const leaderboard = await Submission.findAll({
+    const submissions = await Submission.findAll({
       where: {
         contestId: req.params.contestId,
         status: 'accepted'
       },
-      attributes: [
-        'userId',
-        [fn('SUM', col('Submission.score')), 'totalScore'],
-        [fn('SUM', col('Submission.testCasesPassed')), 'totalPassed'],
-        [fn('MIN', col('Submission.executionTime')), 'bestTime'],
-        [fn('COUNT', col('Submission.id')), 'totalSubmissions']
-      ],
       include: [
         {
           model: User,
           as: 'candidate',
           attributes: ['id', 'name', 'email']
         }
-      ],
-      group: [
-        'Submission.userId',
-        'candidate.id',
-        'candidate.name',
-        'candidate.email'
-      ],
-      order: [[literal('totalScore'), 'DESC']],
-      raw: false,
-      subQuery: false
+      ]
+    });
+
+    const userStats = {};
+
+    submissions.forEach(sub => {
+      const uId = sub.userId;
+      if (!userStats[uId]) {
+        userStats[uId] = {
+          candidate: sub.candidate,
+          questions: {},
+          totalSubmissions: 0
+        };
+      }
+      
+      userStats[uId].totalSubmissions++;
+
+      const qId = sub.questionId;
+      if (!userStats[uId].questions[qId]) {
+        userStats[uId].questions[qId] = {
+          score: sub.score,
+          passed: sub.testCasesPassed || 0,
+          time: sub.executionTime || 0
+        };
+      } else {
+        if (sub.score > userStats[uId].questions[qId].score) {
+          userStats[uId].questions[qId].score = sub.score;
+          userStats[uId].questions[qId].passed = sub.testCasesPassed || 0;
+          userStats[uId].questions[qId].time = sub.executionTime || 0;
+        } else if (sub.score === userStats[uId].questions[qId].score) {
+          if (sub.executionTime < userStats[uId].questions[qId].time) {
+            userStats[uId].questions[qId].time = sub.executionTime;
+          }
+        }
+      }
+    });
+
+    const leaderboard = Object.values(userStats).map(stat => {
+      let totalScore = 0;
+      let totalPassed = 0;
+      let bestTime = 0;
+
+      Object.values(stat.questions).forEach(q => {
+        totalScore += q.score;
+        totalPassed += q.passed;
+        bestTime += q.time;
+      });
+
+      return {
+        candidate: stat.candidate,
+        totalScore,
+        totalPassed,
+        bestTime,
+        totalSubmissions: stat.totalSubmissions
+      };
+    });
+
+    leaderboard.sort((a, b) => {
+      if (b.totalScore !== a.totalScore) return b.totalScore - a.totalScore;
+      return a.bestTime - b.bestTime;
     });
 
     res.json({
       contest: { id: contest.id, title: contest.title },
       leaderboard: leaderboard.map((entry, index) => ({
         rank: index + 1,
-        candidate: entry.candidate,
-        totalScore: entry.dataValues.totalScore || 0,
-        totalPassed: entry.dataValues.totalPassed || 0,
-        bestTime: entry.dataValues.bestTime || 0,
-        totalSubmissions: entry.dataValues.totalSubmissions || 0
+        ...entry
       }))
     });
 
@@ -71,43 +110,65 @@ router.get('/:contestId/shortlist/:topN', authMiddleware, roleMiddleware('compan
 
     const topN = parseInt(req.params.topN) || 10;
 
-    const shortlisted = await Submission.findAll({
+    const submissions = await Submission.findAll({
       where: {
         contestId: req.params.contestId,
         status: 'accepted'
       },
-      attributes: [
-        'userId',
-        [fn('SUM', col('Submission.score')), 'totalScore'],
-        [fn('SUM', col('Submission.testCasesPassed')), 'totalPassed']
-      ],
       include: [
         {
           model: User,
           as: 'candidate',
           attributes: ['id', 'name', 'email']
         }
-      ],
-      group: [
-        'Submission.userId',
-        'candidate.id',
-        'candidate.name',
-        'candidate.email'
-      ],
-      order: [[literal('totalScore'), 'DESC']],
-      limit: topN,
-      raw: false,
-      subQuery: false
+      ]
     });
+
+    const userStats = {};
+
+    submissions.forEach(sub => {
+      const uId = sub.userId;
+      if (!userStats[uId]) {
+        userStats[uId] = {
+          candidate: sub.candidate,
+          questions: {}
+        };
+      }
+      
+      const qId = sub.questionId;
+      if (!userStats[uId].questions[qId] || sub.score > userStats[uId].questions[qId].score) {
+        userStats[uId].questions[qId] = {
+          score: sub.score,
+          passed: sub.testCasesPassed || 0
+        };
+      }
+    });
+
+    const shortlisted = Object.values(userStats).map(stat => {
+      let totalScore = 0;
+      let totalPassed = 0;
+
+      Object.values(stat.questions).forEach(q => {
+        totalScore += q.score;
+        totalPassed += q.passed;
+      });
+
+      return {
+        candidate: stat.candidate,
+        totalScore,
+        totalPassed
+      };
+    });
+
+    shortlisted.sort((a, b) => b.totalScore - a.totalScore);
+    const topShortlisted = shortlisted.slice(0, topN);
 
     res.json({
       contest: { id: contest.id, title: contest.title },
       topN,
-      shortlisted: shortlisted.map((entry, index) => ({
+      shortlisted: topShortlisted.map((entry, index) => ({
         rank: index + 1,
-        candidate: entry.candidate,
-        totalScore: entry.dataValues.totalScore || 0,
-        totalPassed: entry.dataValues.totalPassed || 0
+        ...entry
       }))
     });
 

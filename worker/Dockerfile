@@ -1,6 +1,6 @@
 FROM node:20-alpine
 
-RUN apk add --no-cache docker-cli
+RUN apk add --no-cache python3 g++ openjdk17
 
 WORKDIR /app
 

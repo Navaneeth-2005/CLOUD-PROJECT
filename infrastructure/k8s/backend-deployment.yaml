@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: codestorm-backend
+  labels:
+    app: codestorm-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: codestorm-backend
+  template:
+    metadata:
+      labels:
+        app: codestorm-backend
+    spec:
+      containers:
+      - name: backend
+        image: 673515369025.dkr.ecr.ap-south-1.amazonaws.com/codestorm-prod-backend:latest
+        ports:
+        - containerPort: 5000
+        envFrom:
+        - secretRef:
+            name: codestorm-secrets
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: codestorm-backend-svc
+spec:
+  type: LoadBalancer
+  selector:
+    app: codestorm-backend
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 5000

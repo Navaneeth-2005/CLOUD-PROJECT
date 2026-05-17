@@ -32,6 +32,11 @@ const ContestRegistration = sequelize.define('ContestRegistration', {
   registeredAt: {
     type: DataTypes.DATE,
     defaultValue: DataTypes.NOW
+  },
+  submittedAt: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    defaultValue: null
   }
 }, {
   timestamps: true

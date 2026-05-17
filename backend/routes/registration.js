@@ -6,6 +6,7 @@ const Question = require('../models/Question');
 const User = require('../models/User');
 const { authMiddleware, roleMiddleware } = require('../middleware/auth');
 const { sendContestCredentials } = require('../config/email');
+const Submission = require('../models/Submission');
 
 // Register for a contest
 router.post('/register', authMiddleware, roleMiddleware('candidate'), async (req, res) => {
@@ -91,7 +92,49 @@ router.get('/check/:contestId', authMiddleware, roleMiddleware('candidate'), asy
       }
     });
 
-    res.json({ isRegistered: !!registration });
+    res.json({ isRegistered: !!registration, submittedAt: registration?.submittedAt || null });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// Submit (finalize) a contest — locks the candidate out permanently
+router.post('/submit-contest', authMiddleware, roleMiddleware('candidate'), async (req, res) => {
+  try {
+    const { contestId } = req.body;
+
+    const registration = await ContestRegistration.findOne({
+      where: { userId: req.user.id, contestId }
+    });
+
+    if (!registration) {
+      return res.status(404).json({ message: 'You are not registered for this contest' });
+    }
+
+    if (registration.submittedAt) {
+      return res.status(400).json({ message: 'You have already submitted this contest' });
+    }
+
+    await registration.update({ submittedAt: new Date() });
+
+    // Calculate final score (best per question)
+    const acceptedSubmissions = await Submission.findAll({
+      where: { userId: req.user.id, contestId, status: 'accepted' }
+    });
+
+    const bestPerQuestion = {};
+    acceptedSubmissions.forEach(sub => {
+      if (!bestPerQuestion[sub.questionId] || sub.score > bestPerQuestion[sub.questionId]) {
+        bestPerQuestion[sub.questionId] = sub.score;
+      }
+    });
+    const finalScore = Object.values(bestPerQuestion).reduce((a, b) => a + b, 0);
+
+    res.json({
+      message: 'Contest submitted successfully! Your performance has been recorded.',
+      finalScore,
+      submittedAt: registration.submittedAt
+    });
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }

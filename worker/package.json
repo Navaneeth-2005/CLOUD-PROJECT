@@ -7,10 +7,12 @@
     "start": "node index.js"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1048.0",
+    "@aws-sdk/client-sqs": "^3.1048.0",
     "aws-sdk": "^2.1550.0",
     "axios": "^1.6.0",
     "dotenv": "^16.0.0",
-    "sequelize": "^6.35.0",
-    "mysql2": "^3.6.0"
+    "mysql2": "^3.6.0",
+    "sequelize": "^6.35.0"
   }
 }
