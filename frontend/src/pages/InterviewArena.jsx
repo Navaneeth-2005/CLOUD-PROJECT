@@ -45,6 +45,20 @@ const InterviewArena = () => {
   const remoteAudioRef = useRef(null);
   const timerIntervalRef = useRef(null);
   const textareaRef = useRef(null);
+  const queuedIceCandidatesRef = useRef([]);
+
+  const processQueuedCandidates = async () => {
+    if (peerConnectionRef.current && peerConnectionRef.current.remoteDescription) {
+      while (queuedIceCandidatesRef.current.length > 0) {
+        const candidate = queuedIceCandidatesRef.current.shift();
+        try {
+          await peerConnectionRef.current.addIceCandidate(new RTCIceCandidate(candidate));
+        } catch (e) {
+          console.warn('Failed to add queued ice candidate:', e.message);
+        }
+      }
+    }
+  };
 
   // 1. Fetch Session Details on Load
   useEffect(() => {
@@ -144,7 +158,18 @@ const InterviewArena = () => {
 
     // Sync already connected users in the room
     socket.on('room-users', ({ users }) => {
-      setPeers(users);
+      // Filter out ourselves, and filter duplicates by name/role in case of rapid reloads
+      const filteredUsers = users.filter(u => u.id !== socket.id);
+      const uniqueUsers = [];
+      const seen = new Set();
+      for (const u of filteredUsers) {
+        const key = `${u.name}-${u.role}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          uniqueUsers.push(u);
+        }
+      }
+      setPeers(uniqueUsers);
     });
 
     // Real-time Interview Management Sync
@@ -160,12 +185,17 @@ const InterviewArena = () => {
     });
 
     // Active users tracking
-    socket.on('user-joined', ({ id, name, role }) => {
-      toast.info(`${name} (${role}) has joined the room`);
-      setPeers(prev => [...prev, { id, name, role }]);
+    socket.on('user-joined', ({ id, name, role: peerRole }) => {
+      toast.info(`${name} (${peerRole}) has joined the room`);
       
-      // If we are the interviewer, we initiate the WebRTC audio call
-      if (role !== 'company') {
+      setPeers(prev => {
+        // Filter out any stale connections from the same user (same name and role)
+        const filtered = prev.filter(p => !(p.name === name && p.role === peerRole));
+        return [...filtered, { id, name, role: peerRole }];
+      });
+      
+      // Only the interviewer (company) initiates the WebRTC audio call
+      if (role === 'company' && peerRole !== 'company') {
         initiateWebRtcCall(id);
       }
     });
@@ -188,12 +218,19 @@ const InterviewArena = () => {
     socket.on('webrtc-answer', async ({ id, answer }) => {
       if (peerConnectionRef.current) {
         await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(answer));
+        await processQueuedCandidates();
       }
     });
 
     socket.on('webrtc-candidate', async ({ id, candidate }) => {
-      if (peerConnectionRef.current) {
-        await peerConnectionRef.current.addIceCandidate(new RTCIceCandidate(candidate));
+      if (peerConnectionRef.current && peerConnectionRef.current.remoteDescription) {
+        try {
+          await peerConnectionRef.current.addIceCandidate(new RTCIceCandidate(candidate));
+        } catch (e) {
+          console.warn('Failed to add ice candidate:', e.message);
+        }
+      } else {
+        queuedIceCandidatesRef.current.push(candidate);
       }
     });
   };
@@ -247,6 +284,7 @@ const InterviewArena = () => {
   const handleWebRtcOffer = async (senderId, offer) => {
     const pc = createPeerConnection(senderId);
     await pc.setRemoteDescription(new RTCSessionDescription(offer));
+    await processQueuedCandidates();
     const answer = await pc.createAnswer();
     await pc.setLocalDescription(answer);
 
