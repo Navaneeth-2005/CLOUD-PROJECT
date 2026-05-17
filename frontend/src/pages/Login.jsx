@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import API from '../api/axios';
@@ -8,12 +8,20 @@ const Login = () => {
   const [form, setForm] = useState({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
   const [focusedField, setFocusedField] = useState('');
+  const [tilt, setTilt] = useState({ x: 0, y: 0 });
+  const cardRef = useRef(null);
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+
+  const handleMouseMove = (e) => {
+    const rect = cardRef.current.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width - 0.5;
+    const y = (e.clientY - rect.top) / rect.height - 0.5;
+    setTilt({ x: y * 12, y: x * -12 });
   };
+  const handleMouseLeave = () => setTilt({ x: 0, y: 0 });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -22,11 +30,7 @@ const Login = () => {
       const res = await API.post('/auth/login', form);
       login(res.data.user, res.data.token);
       toast.success('Login successful!');
-      if (res.data.user.role === 'company') {
-        navigate('/company/dashboard');
-      } else {
-        navigate('/candidate/dashboard');
-      }
+      navigate(res.data.user.role === 'company' ? '/company/dashboard' : '/candidate/dashboard');
     } catch (err) {
       toast.error(err.response?.data?.message || 'Login failed');
     } finally {
@@ -35,314 +39,210 @@ const Login = () => {
   };
 
   return (
-    <div style={styles.container}>
-      {/* Animated Orb Background */}
-      <div style={styles.orb1} />
-      <div style={styles.orb2} />
-      <div style={styles.orb3} />
-      <div style={styles.grid} />
+    <div style={s.page}>
+      {/* Animated background orbs */}
+      <div style={s.orb1} />
+      <div style={s.orb2} />
+      <div style={s.orb3} />
+      {/* Grid overlay */}
+      <div style={s.grid} />
 
-      <div style={styles.card}>
-        {/* Logo */}
-        <div style={styles.logoSection}>
-          <div style={styles.logoIconWrap}>
-            <div style={styles.logoIcon}>⚡</div>
-            <div style={styles.logoRing} />
+      {/* 3D Tilt Card */}
+      <div
+        ref={cardRef}
+        style={{
+          ...s.card,
+          transform: `perspective(900px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg) translateZ(20px)`,
+        }}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+      >
+        {/* Card inner glow */}
+        <div style={s.cardGlow} />
+
+        <div style={s.logoWrap}>
+          <div style={s.logoIcon}>
+            <span style={{ fontSize: 28 }}>⚡</span>
           </div>
-          <h1 style={styles.logoText}>CodeStorm</h1>
-          <p style={styles.subtitle}>Welcome back, champion. Sign in to continue.</p>
+          <h1 style={s.brand}>
+            Code<span style={s.brandAccent}>Storm</span>
+          </h1>
+          <p style={s.tagline}>Welcome back, champion.</p>
         </div>
 
-        <form onSubmit={handleSubmit} style={styles.form}>
-          <div style={styles.field}>
-            <label style={styles.label}>Email Address</label>
-            <div style={{
-              ...styles.inputWrapper,
-              borderColor: focusedField === 'email' ? '#00e5ff' : 'rgba(255,255,255,0.1)',
-              boxShadow: focusedField === 'email' ? '0 0 0 3px rgba(0,229,255,0.15)' : 'none'
-            }}>
-              <span style={styles.inputIcon}>✉</span>
-              <input
-                type="email"
-                name="email"
-                value={form.email}
-                onChange={handleChange}
-                onFocus={() => setFocusedField('email')}
-                onBlur={() => setFocusedField('')}
-                style={styles.input}
-                placeholder="Enter your email"
-                required
-              />
+        <form onSubmit={handleSubmit} style={s.form}>
+          {[
+            { key: 'email', label: 'Email Address', type: 'email', icon: '✉️', placeholder: 'you@example.com' },
+            { key: 'password', label: 'Password', type: 'password', icon: '🔑', placeholder: '••••••••' },
+          ].map(({ key, label, type, icon, placeholder }) => (
+            <div key={key} style={s.field}>
+              <label style={s.label}>{label}</label>
+              <div style={{
+                ...s.inputBox,
+                borderColor: focusedField === key ? '#7c3aed' : 'rgba(139,92,246,0.25)',
+                boxShadow: focusedField === key ? '0 0 0 3px rgba(124,58,237,0.2), inset 0 0 20px rgba(124,58,237,0.05)' : 'none',
+              }}>
+                <span style={s.inputIcon}>{icon}</span>
+                <input
+                  type={type}
+                  name={key}
+                  value={form[key]}
+                  onChange={handleChange}
+                  onFocus={() => setFocusedField(key)}
+                  onBlur={() => setFocusedField('')}
+                  style={s.input}
+                  placeholder={placeholder}
+                  required
+                />
+              </div>
             </div>
-          </div>
-
-          <div style={styles.field}>
-            <label style={styles.label}>Password</label>
-            <div style={{
-              ...styles.inputWrapper,
-              borderColor: focusedField === 'password' ? '#00e5ff' : 'rgba(255,255,255,0.1)',
-              boxShadow: focusedField === 'password' ? '0 0 0 3px rgba(0,229,255,0.15)' : 'none'
-            }}>
-              <span style={styles.inputIcon}>🔒</span>
-              <input
-                type="password"
-                name="password"
-                value={form.password}
-                onChange={handleChange}
-                onFocus={() => setFocusedField('password')}
-                onBlur={() => setFocusedField('')}
-                style={styles.input}
-                placeholder="Enter your password"
-                required
-              />
-            </div>
-          </div>
+          ))}
 
           <button
             type="submit"
-            style={{ ...styles.btn, opacity: loading ? 0.7 : 1 }}
+            style={{ ...s.btn, opacity: loading ? 0.75 : 1 }}
             disabled={loading}
             onMouseEnter={e => {
-              e.currentTarget.style.transform = 'translateY(-3px)';
-              e.currentTarget.style.boxShadow = '0 16px 40px rgba(0,229,255,0.5)';
+              e.currentTarget.style.transform = 'translateY(-3px) scale(1.02)';
+              e.currentTarget.style.boxShadow = '0 20px 50px rgba(124,58,237,0.6), 0 0 0 1px rgba(139,92,246,0.8)';
             }}
             onMouseLeave={e => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 8px 25px rgba(0,229,255,0.3)';
+              e.currentTarget.style.transform = 'translateY(0) scale(1)';
+              e.currentTarget.style.boxShadow = '0 8px 30px rgba(124,58,237,0.4)';
             }}
           >
-            {loading ? (
-              <span style={styles.loadingText}>
-                <span style={styles.spinner} />
-                Authenticating...
-              </span>
-            ) : '🚀 Sign In'}
+            {loading
+              ? <><span style={s.spinner} /> Authenticating...</>
+              : '🚀 Sign In'}
           </button>
         </form>
 
-        <p style={styles.bottom}>
-          Don't have an account?{' '}
-          <Link to="/register" style={styles.linkText}>Create one here →</Link>
+        <p style={s.footer}>
+          No account yet?{' '}
+          <Link to="/register" style={s.link}>Create one →</Link>
         </p>
       </div>
 
       <style>{`
-        @keyframes orbFloat1 {
-          0%, 100% { transform: translate(0,0) scale(1); }
-          50% { transform: translate(40px,-60px) scale(1.1); }
-        }
-        @keyframes orbFloat2 {
-          0%, 100% { transform: translate(0,0) scale(1); }
-          50% { transform: translate(-50px,40px) scale(0.9); }
-        }
-        @keyframes orbFloat3 {
-          0%, 100% { transform: translate(0,0); }
-          50% { transform: translate(30px,50px); }
-        }
+        @keyframes orbFloat1 { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(50px,-70px) scale(1.1)} }
+        @keyframes orbFloat2 { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(-60px,40px) scale(0.9)} }
+        @keyframes orbFloat3 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(30px,50px)} }
         @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes cardIn {
-          from { opacity: 0; transform: translateY(50px) scale(0.95); }
-          to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-        @keyframes ringPulse {
-          0%, 100% { transform: scale(1); opacity: 0.6; }
-          50% { transform: scale(1.3); opacity: 0; }
-        }
+        @keyframes cardIn { from{opacity:0;transform:perspective(900px) translateY(60px) scale(0.9)} to{opacity:1;transform:perspective(900px) translateY(0) scale(1)} }
+        @keyframes pulseRing { 0%,100%{transform:scale(1);opacity:0.6} 50%{transform:scale(1.4);opacity:0} }
       `}</style>
     </div>
   );
 };
 
-const styles = {
-  container: {
+const s = {
+  page: {
     minHeight: '100vh',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    background: 'linear-gradient(135deg, #0a0a1a 0%, #0f172a 40%, #1a0533 100%)',
+    background: '#080810',
     position: 'relative',
     overflow: 'hidden',
-    fontFamily: "'Outfit', 'Inter', sans-serif"
-  },
-  grid: {
-    position: 'absolute',
-    inset: 0,
-    backgroundImage: 'linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px)',
-    backgroundSize: '40px 40px',
-    pointerEvents: 'none'
+    fontFamily: "'Outfit', sans-serif",
   },
   orb1: {
-    position: 'absolute',
-    width: '500px',
-    height: '500px',
-    borderRadius: '50%',
-    background: 'radial-gradient(circle, rgba(0,229,255,0.12) 0%, transparent 70%)',
-    top: '-150px',
-    left: '-150px',
-    animation: 'orbFloat1 10s ease-in-out infinite',
-    pointerEvents: 'none'
+    position: 'absolute', width: 600, height: 600, borderRadius: '50%',
+    background: 'radial-gradient(circle, rgba(124,58,237,0.18) 0%, transparent 70%)',
+    top: -200, left: -150, animation: 'orbFloat1 12s ease-in-out infinite', pointerEvents: 'none',
   },
   orb2: {
-    position: 'absolute',
-    width: '400px',
-    height: '400px',
-    borderRadius: '50%',
-    background: 'radial-gradient(circle, rgba(168,85,247,0.15) 0%, transparent 70%)',
-    bottom: '-100px',
-    right: '-100px',
-    animation: 'orbFloat2 14s ease-in-out infinite',
-    pointerEvents: 'none'
+    position: 'absolute', width: 500, height: 500, borderRadius: '50%',
+    background: 'radial-gradient(circle, rgba(6,182,212,0.14) 0%, transparent 70%)',
+    bottom: -150, right: -100, animation: 'orbFloat2 16s ease-in-out infinite', pointerEvents: 'none',
   },
   orb3: {
-    position: 'absolute',
-    width: '300px',
-    height: '300px',
-    borderRadius: '50%',
-    background: 'radial-gradient(circle, rgba(59,130,246,0.1) 0%, transparent 70%)',
-    top: '50%',
-    left: '55%',
-    animation: 'orbFloat3 8s ease-in-out infinite',
-    pointerEvents: 'none'
+    position: 'absolute', width: 300, height: 300, borderRadius: '50%',
+    background: 'radial-gradient(circle, rgba(168,85,247,0.12) 0%, transparent 70%)',
+    top: '50%', left: '60%', animation: 'orbFloat3 9s ease-in-out infinite', pointerEvents: 'none',
+  },
+  grid: {
+    position: 'absolute', inset: 0, pointerEvents: 'none',
+    backgroundImage: 'linear-gradient(rgba(139,92,246,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(139,92,246,0.04) 1px,transparent 1px)',
+    backgroundSize: '44px 44px',
   },
   card: {
-    background: 'rgba(15, 23, 42, 0.8)',
+    position: 'relative', zIndex: 10,
+    width: '100%', maxWidth: 460,
+    background: 'rgba(15,15,28,0.85)',
     backdropFilter: 'blur(24px)',
     WebkitBackdropFilter: 'blur(24px)',
-    border: '1px solid rgba(0,229,255,0.15)',
-    padding: '50px 44px',
-    borderRadius: '28px',
-    width: '100%',
-    maxWidth: '460px',
-    position: 'relative',
-    zIndex: 1,
-    animation: 'cardIn 0.6s cubic-bezier(0.16,1,0.3,1)',
-    boxShadow: '0 30px 80px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.08)'
+    border: '1px solid rgba(139,92,246,0.35)',
+    borderRadius: 28,
+    padding: '52px 44px',
+    boxShadow: '0 30px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(139,92,246,0.2)',
+    animation: 'cardIn 0.7s cubic-bezier(0.16,1,0.3,1)',
+    transition: 'transform 0.15s ease, box-shadow 0.3s ease',
+    transformStyle: 'preserve-3d',
   },
-  logoSection: {
-    textAlign: 'center',
-    marginBottom: '40px'
+  cardGlow: {
+    position: 'absolute', inset: -1, borderRadius: 28, pointerEvents: 'none',
+    background: 'linear-gradient(135deg, rgba(124,58,237,0.15), rgba(6,182,212,0.08))',
+    zIndex: -1,
   },
-  logoIconWrap: {
-    position: 'relative',
-    display: 'inline-block',
-    marginBottom: '16px'
-  },
+  logoWrap: { textAlign: 'center', marginBottom: 40 },
   logoIcon: {
-    width: '64px',
-    height: '64px',
-    background: 'linear-gradient(135deg, #00e5ff, #0077ff)',
-    borderRadius: '20px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '28px',
-    margin: '0 auto',
-    boxShadow: '0 8px 30px rgba(0,229,255,0.4)',
-    position: 'relative',
-    zIndex: 1
+    width: 68, height: 68,
+    background: 'linear-gradient(135deg, #7c3aed, #06b6d4)',
+    borderRadius: 20, display: 'flex', alignItems: 'center', justifyContent: 'center',
+    margin: '0 auto 16px',
+    boxShadow: '0 0 40px rgba(124,58,237,0.5), 0 8px 24px rgba(0,0,0,0.4)',
+    transformStyle: 'preserve-3d', transform: 'translateZ(20px)',
   },
-  logoRing: {
-    position: 'absolute',
-    inset: '-6px',
-    borderRadius: '26px',
-    border: '2px solid rgba(0,229,255,0.4)',
-    animation: 'ringPulse 3s ease-in-out infinite'
+  brand: {
+    fontSize: 28, fontWeight: 800, color: '#fff',
+    letterSpacing: '-0.5px', margin: '0 0 8px',
   },
-  logoText: {
-    fontSize: '26px',
-    fontWeight: '800',
-    background: 'linear-gradient(135deg, #ffffff, #00e5ff)',
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
-    backgroundClip: 'text',
-    margin: '0 0 10px',
-    letterSpacing: '-0.5px'
+  brandAccent: {
+    background: 'linear-gradient(135deg, #a855f7, #06b6d4)',
+    WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
   },
-  subtitle: {
-    fontSize: '14px',
-    color: 'rgba(148,163,184,0.9)',
-    margin: 0
-  },
-  form: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '22px'
-  },
-  field: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '8px'
-  },
+  tagline: { fontSize: 14, color: '#94a3b8', margin: 0 },
+  form: { display: 'flex', flexDirection: 'column', gap: 20 },
+  field: { display: 'flex', flexDirection: 'column', gap: 8 },
   label: {
-    fontSize: '13px',
-    fontWeight: '600',
-    color: '#94a3b8',
-    letterSpacing: '0.5px',
-    textTransform: 'uppercase'
+    fontSize: 11, fontWeight: 700, color: '#94a3b8',
+    textTransform: 'uppercase', letterSpacing: '1px',
   },
-  inputWrapper: {
-    display: 'flex',
-    alignItems: 'center',
-    borderRadius: '14px',
-    overflow: 'hidden',
-    border: '1.5px solid rgba(255,255,255,0.1)',
+  inputBox: {
+    display: 'flex', alignItems: 'center',
     background: 'rgba(255,255,255,0.04)',
-    transition: 'all 0.3s ease'
+    border: '1.5px solid rgba(139,92,246,0.25)',
+    borderRadius: 14, overflow: 'hidden',
+    transition: 'all 0.25s ease',
   },
-  inputIcon: {
-    padding: '0 14px',
-    fontSize: '16px',
-    color: '#64748b'
-  },
+  inputIcon: { padding: '0 14px', fontSize: 16 },
   input: {
-    flex: 1,
-    padding: '14px 14px 14px 0',
-    border: 'none',
-    background: 'transparent',
-    fontSize: '15px',
-    outline: 'none',
-    color: '#f1f5f9'
+    flex: 1, padding: '14px 14px 14px 0',
+    border: 'none', background: 'transparent',
+    fontSize: 15, outline: 'none', color: '#fff',
   },
   btn: {
-    padding: '15px',
-    background: 'linear-gradient(135deg, #00e5ff, #0077ff)',
-    color: 'white',
-    border: 'none',
-    borderRadius: '14px',
-    fontSize: '16px',
-    fontWeight: '700',
-    marginTop: '8px',
-    transition: 'all 0.3s cubic-bezier(0.4,0,0.2,1)',
-    boxShadow: '0 8px 25px rgba(0,229,255,0.3)',
+    marginTop: 8, padding: '16px',
+    background: 'linear-gradient(135deg, #7c3aed, #06b6d4)',
+    color: '#fff', border: 'none', borderRadius: 14,
+    fontSize: 16, fontWeight: 700,
+    boxShadow: '0 8px 30px rgba(124,58,237,0.4)',
     cursor: 'pointer',
-    letterSpacing: '0.3px'
-  },
-  loadingText: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '10px'
+    transition: 'all 0.3s cubic-bezier(0.4,0,0.2,1)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+    fontFamily: "'Outfit', sans-serif",
+    letterSpacing: '0.3px',
   },
   spinner: {
-    width: '16px',
-    height: '16px',
+    width: 16, height: 16,
     border: '2px solid rgba(255,255,255,0.3)',
-    borderTop: '2px solid white',
-    borderRadius: '50%',
-    display: 'inline-block',
-    animation: 'spin 0.8s linear infinite'
+    borderTop: '2px solid #fff',
+    borderRadius: '50%', display: 'inline-block',
+    animation: 'spin 0.8s linear infinite',
   },
-  bottom: {
-    textAlign: 'center',
-    marginTop: '28px',
-    fontSize: '14px',
-    color: '#64748b'
-  },
-  linkText: {
-    color: '#00e5ff',
-    textDecoration: 'none',
-    fontWeight: '700'
-  }
+  footer: { textAlign: 'center', marginTop: 28, fontSize: 14, color: '#64748b' },
+  link: { color: '#a855f7', textDecoration: 'none', fontWeight: 700 },
 };
 
 export default Login;

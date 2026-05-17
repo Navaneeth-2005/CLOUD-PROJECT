@@ -1,205 +1,192 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap');
 
-* {
-  margin: 0;
-  padding: 0;
+/* ============================================================
+   CODESTORM GLOBAL DESIGN SYSTEM
+   Theme: Deep Space Electric (Dark + High Contrast)
+   ============================================================ */
+
+:root {
+  --bg-base:        #080810;
+  --bg-surface:     #0f0f1a;
+  --bg-elevated:    #16162a;
+  --bg-card:        #1a1a2e;
+
+  --border-subtle:  rgba(139,92,246,0.15);
+  --border-default: rgba(139,92,246,0.3);
+  --border-strong:  rgba(139,92,246,0.6);
+
+  --primary:        #7c3aed;
+  --primary-light:  #a855f7;
+  --primary-glow:   rgba(124,58,237,0.4);
+
+  --cyan:           #06b6d4;
+  --cyan-light:     #22d3ee;
+  --cyan-glow:      rgba(6,182,212,0.4);
+
+  --green:          #10b981;
+  --red:            #ef4444;
+  --amber:          #f59e0b;
+
+  --text-primary:   #ffffff;
+  --text-secondary: #cbd5e1;
+  --text-muted:     #64748b;
+
+  --gradient-brand: linear-gradient(135deg, #7c3aed 0%, #06b6d4 100%);
+  --gradient-card:  linear-gradient(135deg, rgba(124,58,237,0.12) 0%, rgba(6,182,212,0.08) 100%);
+
+  --shadow-card:    0 4px 24px rgba(0,0,0,0.6), 0 0 0 1px rgba(139,92,246,0.2);
+  --shadow-glow:    0 0 40px rgba(124,58,237,0.3);
+  --shadow-hover:   0 20px 60px rgba(0,0,0,0.7), 0 0 0 1px rgba(139,92,246,0.5), 0 0 30px rgba(124,58,237,0.2);
+
+  --radius-sm:  8px;
+  --radius-md:  14px;
+  --radius-lg:  20px;
+  --radius-xl:  28px;
+}
+
+/* ===================== RESET ===================== */
+*, *::before, *::after {
+  margin: 0; padding: 0;
   box-sizing: border-box;
 }
 
+html { scroll-behavior: smooth; }
+
 body {
-  font-family: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background: linear-gradient(-45deg, #0f172a, #1e1b4b, #312e81, #0f172a);
-  background-size: 400% 400%;
-  animation: gradientBG 15s ease infinite;
-  color: #f8fafc;
+  font-family: 'Outfit', -apple-system, sans-serif;
+  background: var(--bg-base);
+  color: var(--text-primary);
   min-height: 100vh;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
+  background-image:
+    radial-gradient(ellipse 80% 60% at 20% -10%, rgba(124,58,237,0.15) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 80% 110%, rgba(6,182,212,0.1) 0%, transparent 60%);
+  background-attachment: fixed;
 }
 
-/* 🌟 Stunning Animated Background */
-@keyframes gradientBG {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-/* ✨ Beautiful Scrollbars */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.2);
-}
+/* ===================== SCROLLBAR ===================== */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-base); }
 ::-webkit-scrollbar-thumb {
-  background: rgba(0, 229, 255, 0.4);
-  border-radius: 4px;
+  background: var(--primary);
+  border-radius: 3px;
 }
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 229, 255, 0.8);
+::-webkit-scrollbar-thumb:hover { background: var(--primary-light); }
+
+/* ===================== SELECTION ===================== */
+::selection {
+  background: rgba(124,58,237,0.4);
+  color: #fff;
 }
 
-/* 🚀 Universal Button Hover Effects */
-button, .btn {
-  font-family: 'Outfit', sans-serif !important;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+/* ===================== INPUTS ===================== */
+input, select, textarea {
+  font-family: 'Outfit', sans-serif;
+  color: var(--text-primary);
+}
+input::placeholder, textarea::placeholder {
+  color: var(--text-muted);
+}
+
+/* ===================== GLOBAL ANIMATIONS ===================== */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(32px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInScale {
+  from { opacity: 0; transform: scale(0.94) translateY(20px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-100%); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes ripple {
+  0%   { transform: scale(0); opacity: 0.6; }
+  100% { transform: scale(4); opacity: 0; }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(124,58,237,0.5); }
+  50%       { box-shadow: 0 0 0 12px rgba(124,58,237,0); }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  33%  { transform: translateY(-18px) rotate(2deg); }
+  66%  { transform: translateY(-8px) rotate(-1deg); }
+}
+
+@keyframes orbMove {
+  0%   { transform: translate(0, 0) scale(1); }
+  33%  { transform: translate(40px, -60px) scale(1.1); }
+  66%  { transform: translate(-30px, 30px) scale(0.9); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+
+@keyframes borderPulse {
+  0%, 100% { border-color: rgba(139,92,246,0.3); }
+  50%       { border-color: rgba(139,92,246,0.7); }
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-40px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes staggerIn {
+  from { opacity: 0; transform: translateY(24px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ===================== UTILITY CLASSES ===================== */
+.animate-fadeInUp   { animation: fadeInUp 0.7s cubic-bezier(0.16,1,0.3,1) forwards; }
+.animate-fadeInScale{ animation: fadeInScale 0.6s cubic-bezier(0.16,1,0.3,1) forwards; }
+.animate-staggerIn  { animation: staggerIn 0.5s cubic-bezier(0.16,1,0.3,1) both; }
+
+.gradient-text {
+  background: var(--gradient-brand);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.glass-card {
+  background: rgba(26, 26, 46, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border-default);
+  box-shadow: var(--shadow-card);
+}
+
+/* ===================== BUTTON BASE ===================== */
+button { cursor: pointer; }
+
+/* Ripple button effect */
+.btn-ripple {
   position: relative;
   overflow: hidden;
-  z-index: 1;
 }
-
-button::before {
+.btn-ripple::after {
   content: '';
   position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-  transition: all 0.4s ease;
-  z-index: -1;
-}
-
-button:hover::before {
-  left: 100%;
-}
-
-button:hover {
-  transform: translateY(-3px) scale(1.02) !important;
-  box-shadow: 0 10px 20px -5px rgba(0, 229, 255, 0.4) !important;
-}
-
-button:active {
-  transform: translateY(1px) scale(0.98) !important;
-}
-
-/* ✒️ Input Fields Styling Enhancement */
-input, select, textarea {
-  font-family: 'Inter', sans-serif !important;
-  transition: all 0.3s ease !important;
-}
-
-input:focus, select:focus, textarea:focus {
-  border-color: #00e5ff !important;
-  box-shadow: 0 0 0 4px rgba(0, 229, 255, 0.15) !important;
-  outline: none;
-}
-
-/* 🎭 Universal Fade In Animation for main containers */
-body > #root > div, .card, .container, main, [style*="container"], [style*="card"] {
-  animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(40px) scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-/* 🛸 Floating Elements Animation */
-@keyframes float {
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-12px); }
-  100% { transform: translateY(0px); }
-}
-
-.floating {
-  animation: float 6s ease-in-out infinite;
-}
-
-/* 🌌 Glowing Neon Elements */
-h1, h2, .logoText {
-  text-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
-  letter-spacing: -0.5px;
-}
-
-/* 💎 Global Card Glassmorphism override (Dark Mode Conversion) */
-[style*="background: white"],
-[style*="background-color: white"],
-[style*="background: rgb(255, 255, 255)"],
-[style*="background-color: rgb(255, 255, 255)"],
-[style*="background: #ffffff"],
-[style*="background-color: #ffffff"],
-[style*="background: #fff"],
-[style*="background-color: #fff"],
-[style*="background: rgba(255, 255, 255, 0.97)"],
-[style*="background: rgba(255,255,255,0.97)"],
-[style*="background: #f8f9fa"],
-[style*="background: #f5f5f5"],
-[style*="background-color: #f8f9fa"],
-[style*="background-color: #f5f5f5"],
-[style*="rgb(248, 249, 250)"],
-[style*="rgb(245, 245, 245)"] {
-  background: rgba(20, 30, 50, 0.6) !important;
-  backdrop-filter: blur(16px) !important;
-  -webkit-backdrop-filter: blur(16px) !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
-  color: #f8fafc !important;
-}
-
-/* 🚀 Nuke Page Level Inline Backgrounds to reveal Body Gradient */
-#root > div:nth-child(2), 
-#root > div:nth-child(3),
-[style*="background: #f0f4f8"],
-[style*="background-color: #f0f4f8"],
-[style*="background: #fafafa"],
-[style*="background-color: #fafafa"],
-[style*="rgb(240, 244, 248)"],
-[style*="rgb(250, 250, 250)"] {
-  background: transparent !important;
-}
-
-/* 🔧 Fix text colors inside glass cards */
-[style*="color: '#333'"], 
-[style*="color: '#444'"], 
-[style*="color: '#666'"],
-[style*="color: '#1a1a2e'"] {
-  color: #e2e8f0 !important;
-}
-
-[style*="color: '#888'"],
-[style*="color: '#94a3b8'"] {
-  color: #94a3b8 !important;
-}
-
-/* Table Enhancements */
-table {
-  border-collapse: collapse;
-  width: 100%;
-}
-
-tr {
-  transition: all 0.2s ease;
-}
-
-tr:hover {
-  background: rgba(0, 229, 255, 0.05) !important;
-}
-
-td, th {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
-}
-
-/* Custom Selection Highlight */
-::selection {
-  background: rgba(0, 229, 255, 0.4);
-  color: #ffffff;
-}
-
-/* Dynamic pulse for live indicators */
-@keyframes pulseGlow {
-  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-  70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
-}
-
-[style*="background: '#10b981'"], [style*="background: '#00e5ff'"] {
-  animation: pulseGlow 2s infinite;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.4);
+  transform: scale(0);
+  animation: ripple 0.6s linear;
+  pointer-events: none;
 }

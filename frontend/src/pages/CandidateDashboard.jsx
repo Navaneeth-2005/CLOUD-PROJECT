@@ -244,13 +244,13 @@ const CandidateDashboard = () => {
               style={{
                 ...styles.tab,
                 background: activeTab === tab
-                  ? 'linear-gradient(135deg, #4fc3f7, #0288d1)'
-                  : 'white',
-                color: activeTab === tab ? 'white' : '#666',
+                  ? 'linear-gradient(135deg, #7c3aed, #06b6d4)'
+                  : 'transparent',
+                color: activeTab === tab ? '#ffffff' : '#94a3b8',
                 boxShadow: activeTab === tab
-                  ? '0 4px 15px rgba(79,195,247,0.4)'
+                  ? '0 4px 20px rgba(124,58,237,0.5)'
                   : 'none',
-                border: activeTab === tab ? 'none' : '1px solid #e0e0e0'
+                border: activeTab === tab ? 'none' : '1px solid rgba(139,92,246,0.2)'
               }}
               onClick={() => setActiveTab(tab)}
             >
@@ -293,11 +293,13 @@ const CandidateDashboard = () => {
                       key={contest.id}
                       style={{
                         ...styles.card,
-                        transform: hoveredCard === contest.id ? 'translateY(-6px)' : 'translateY(0)',
+                        transform: hoveredCard === contest.id
+                          ? 'perspective(800px) translateY(-10px) rotateX(2deg) scale(1.02)'
+                          : 'perspective(800px) translateY(0) rotateX(0deg) scale(1)',
                         boxShadow: hoveredCard === contest.id
-                          ? '0 20px 40px rgba(0,0,0,0.12)'
-                          : '0 4px 16px rgba(0,0,0,0.06)',
-                        animation: `fadeIn 0.4s ease-out ${i * 0.1}s both`
+                          ? '0 30px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(139,92,246,0.6), 0 0 40px rgba(124,58,237,0.2)'
+                          : '0 4px 24px rgba(0,0,0,0.4), 0 0 0 1px rgba(139,92,246,0.2)',
+                        animation: `staggerIn 0.5s cubic-bezier(0.16,1,0.3,1) ${i * 0.08}s both`
                       }}
                       onMouseEnter={() => setHoveredCard(contest.id)}
                       onMouseLeave={() => setHoveredCard(null)}
@@ -348,8 +350,14 @@ const CandidateDashboard = () => {
                         <button
                           style={styles.actionBtn}
                           onClick={() => navigate(`/leaderboard/${contest.id}`)}
-                          onMouseEnter={e => e.currentTarget.style.background = '#f0f9ff'}
-                          onMouseLeave={e => e.currentTarget.style.background = 'white'}
+                          onMouseEnter={e => {
+                            e.currentTarget.style.background = 'rgba(124,58,237,0.2)';
+                            e.currentTarget.style.color = '#a855f7';
+                          }}
+                          onMouseLeave={e => {
+                            e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                            e.currentTarget.style.color = '#94a3b8';
+                          }}
                         >
                           Leaderboard
                         </button>
@@ -420,10 +428,16 @@ const CandidateDashboard = () => {
                       key={sub.id}
                       style={{
                         ...styles.submissionCard,
-                        animation: `slideIn 0.3s ease-out ${i * 0.05}s both`
+                        animation: `staggerIn 0.4s ease-out ${i * 0.05}s both`
                       }}
-                      onMouseEnter={e => e.currentTarget.style.background = '#f8f9ff'}
-                      onMouseLeave={e => e.currentTarget.style.background = 'white'}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.background = 'rgba(124,58,237,0.08)';
+                        e.currentTarget.style.borderColor = 'rgba(139,92,246,0.4)';
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.background = 'rgba(26,26,46,0.7)';
+                        e.currentTarget.style.borderColor = 'rgba(139,92,246,0.2)';
+                      }}
                     >
                       <div style={styles.subLeft}>
                         <div style={{
@@ -552,12 +566,12 @@ const CandidateDashboard = () => {
               </div>
 
               <div style={{
-                background: '#f0f9ff',
-                border: '1px solid #bae6fd',
+                background: 'rgba(6,182,212,0.08)',
+                border: '1px solid rgba(6,182,212,0.25)',
                 borderRadius: '10px',
                 padding: '12px 14px',
                 fontSize: '13px',
-                color: '#0369a1'
+                color: '#22d3ee'
               }}>
                 📧 Login credentials and contest link will be sent to{' '}
                 <strong>{user?.email}</strong> after registration
@@ -565,12 +579,12 @@ const CandidateDashboard = () => {
 
               {getStatus(selectedContest).label === 'Upcoming' && (
                 <div style={{
-                  background: '#fefce8',
-                  border: '1px solid #fde047',
+                  background: 'rgba(245,158,11,0.08)',
+                  border: '1px solid rgba(245,158,11,0.25)',
                   borderRadius: '10px',
                   padding: '12px 14px',
                   fontSize: '13px',
-                  color: '#854d0e'
+                  color: '#fbbf24'
                 }}>
                   ⏰ This is an upcoming contest. You can register now and enter when it goes live on{' '}
                   <strong>{formatDate(selectedContest.startTime)}</strong>
@@ -610,465 +624,248 @@ const CandidateDashboard = () => {
 
 const styles = {
   page: {
-    minHeight: 'calc(100vh - 65px)',
+    minHeight: 'calc(100vh - 66px)',
     background: 'transparent',
-    fontFamily: "'Outfit', 'Inter', sans-serif"
+    fontFamily: "'Outfit', sans-serif",
   },
   header: {
-    background: 'linear-gradient(135deg, rgba(0,229,255,0.08) 0%, rgba(0,119,255,0.1) 50%, rgba(168,85,247,0.08) 100%)',
-    borderBottom: '1px solid rgba(0,229,255,0.12)',
-    padding: '36px 40px 28px',
-    color: 'white',
-    position: 'relative',
-    overflow: 'hidden'
+    padding: '40px 40px 32px',
+    background: 'linear-gradient(135deg, rgba(124,58,237,0.1) 0%, rgba(6,182,212,0.06) 100%)',
+    borderBottom: '1px solid rgba(139,92,246,0.18)',
+    position: 'relative', overflow: 'hidden',
   },
   headerInner: {
-    maxWidth: '1200px',
-    margin: '0 auto 28px',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center'
+    maxWidth: 1200, margin: '0 auto 28px',
+    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
   },
-  headerLeft: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '20px'
-  },
+  headerLeft: { display: 'flex', alignItems: 'center', gap: 20 },
   avatarLarge: {
-    width: '64px',
-    height: '64px',
-    background: 'linear-gradient(135deg, #00e5ff, #0077ff)',
-    borderRadius: '50%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '26px',
-    fontWeight: '800',
-    color: 'white',
-    boxShadow: '0 0 30px rgba(0,229,255,0.4), 0 4px 20px rgba(0,0,0,0.3)',
-    border: '2px solid rgba(0,229,255,0.3)'
+    width: 68, height: 68, borderRadius: '50%',
+    background: 'linear-gradient(135deg, #7c3aed, #06b6d4)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    fontSize: 28, fontWeight: 900, color: '#fff',
+    boxShadow: '0 0 40px rgba(124,58,237,0.5), 0 4px 20px rgba(0,0,0,0.4)',
+    border: '2px solid rgba(139,92,246,0.4)',
   },
   headerTitle: {
-    fontSize: '28px',
-    fontWeight: '800',
-    margin: '0 0 6px',
-    background: 'linear-gradient(135deg, #ffffff, #00e5ff)',
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
-    backgroundClip: 'text'
+    fontSize: 30, fontWeight: 800, margin: '0 0 6px',
+    background: 'linear-gradient(135deg, #ffffff 0%, #a855f7 100%)',
+    WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
   },
-  headerSub: {
-    fontSize: '14px',
-    color: 'rgba(148,163,184,0.9)',
-    margin: 0
-  },
+  headerSub: { fontSize: 14, color: '#64748b', margin: 0 },
   statsRow: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(5, 1fr)',
-    gap: '16px',
-    maxWidth: '1200px',
-    margin: '0 auto'
+    display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)',
+    gap: 14, maxWidth: 1200, margin: '0 auto',
   },
   statCard: {
-    background: 'rgba(255,255,255,0.04)',
+    background: 'rgba(26,26,46,0.7)',
     backdropFilter: 'blur(12px)',
-    WebkitBackdropFilter: 'blur(12px)',
-    borderRadius: '18px',
-    padding: '18px',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '14px',
-    border: '1px solid rgba(0,229,255,0.1)',
-    transition: 'all 0.3s ease'
+    border: '1px solid rgba(139,92,246,0.2)',
+    borderRadius: 16, padding: '16px 18px',
+    display: 'flex', alignItems: 'center', gap: 12,
+    transition: 'all 0.3s ease',
   },
   statIconBox: {
-    width: '44px',
-    height: '44px',
-    borderRadius: '12px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center'
+    width: 44, height: 44, borderRadius: 12,
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
   },
-  statIcon: { fontSize: '22px' },
-  statValue: {
-    fontSize: '22px',
-    fontWeight: '800',
-    margin: 0,
-    color: '#f1f5f9'
-  },
+  statIcon: { fontSize: 22 },
+  statValue: { fontSize: 22, fontWeight: 800, margin: 0 },
   statLabel: {
-    fontSize: '11px',
-    color: 'rgba(148,163,184,0.7)',
-    margin: 0,
-    textTransform: 'uppercase',
-    letterSpacing: '0.5px',
-    fontWeight: '600'
+    fontSize: 11, color: '#64748b', margin: 0,
+    textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600,
   },
-  content: {
-    maxWidth: '1200px',
-    margin: '0 auto',
-    padding: '40px'
-  },
+  content: { maxWidth: 1200, margin: '0 auto', padding: '36px 40px' },
   tabs: {
-    display: 'flex',
-    gap: '8px',
-    marginBottom: '30px',
-    background: 'rgba(255,255,255,0.03)',
-    border: '1px solid rgba(255,255,255,0.06)',
-    borderRadius: '14px',
-    padding: '6px',
-    width: 'fit-content'
+    display: 'flex', gap: 8, marginBottom: 28,
+    background: 'rgba(26,26,46,0.6)',
+    border: '1px solid rgba(139,92,246,0.2)',
+    borderRadius: 12, padding: '5px', width: 'fit-content',
   },
   tab: {
-    padding: '10px 24px',
-    borderRadius: '10px',
-    fontSize: '14px',
-    fontWeight: '600',
-    cursor: 'pointer',
-    transition: 'all 0.2s ease',
-    border: 'none'
+    padding: '9px 22px', borderRadius: 9,
+    fontSize: 14, fontWeight: 700,
+    cursor: 'pointer', transition: 'all 0.25s ease',
+    fontFamily: "'Outfit', sans-serif",
   },
-  tabContent: {
-    animation: 'fadeIn 0.4s ease-out'
-  },
+  tabContent: { animation: 'staggerIn 0.4s ease-out' },
   grid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))',
-    gap: '24px'
+    gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
+    gap: 24,
   },
   card: {
-    background: 'rgba(15,23,42,0.6)',
+    background: 'rgba(22,22,42,0.85)',
     backdropFilter: 'blur(16px)',
     WebkitBackdropFilter: 'blur(16px)',
-    borderRadius: '22px',
-    padding: '26px',
-    transition: 'all 0.3s cubic-bezier(0.4,0,0.2,1)',
+    border: '1px solid rgba(139,92,246,0.2)',
+    borderRadius: 22, padding: '26px',
+    transition: 'all 0.35s cubic-bezier(0.4,0,0.2,1)',
     cursor: 'pointer',
-    border: '1px solid rgba(255,255,255,0.07)',
-    boxShadow: '0 8px 32px rgba(0,0,0,0.3)'
+    transformStyle: 'preserve-3d',
   },
   cardTop: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '16px'
+    display: 'flex', justifyContent: 'space-between',
+    alignItems: 'center', marginBottom: 16,
   },
   statusBadge: {
-    fontSize: '12px',
-    fontWeight: '700',
-    padding: '4px 12px',
-    borderRadius: '20px',
-    letterSpacing: '0.3px'
+    fontSize: 12, fontWeight: 700,
+    padding: '4px 12px', borderRadius: 20,
+    letterSpacing: '0.3px',
   },
   registeredBadge: {
-    fontSize: '11px',
-    fontWeight: '700',
-    padding: '3px 10px',
-    borderRadius: '20px',
+    fontSize: 11, fontWeight: 700,
+    padding: '3px 10px', borderRadius: 20,
     background: 'rgba(16,185,129,0.15)',
     color: '#10b981',
-    border: '1px solid rgba(16,185,129,0.3)'
+    border: '1px solid rgba(16,185,129,0.3)',
   },
   questionCount: {
-    fontSize: '12px',
-    color: '#94a3b8',
+    fontSize: 12, color: '#94a3b8',
     background: 'rgba(255,255,255,0.06)',
-    padding: '4px 10px',
-    borderRadius: '20px'
+    padding: '4px 10px', borderRadius: 20,
   },
   cardTitle: {
-    fontSize: '18px',
-    fontWeight: '700',
-    color: '#f1f5f9',
-    margin: '0 0 8px'
+    fontSize: 18, fontWeight: 800,
+    color: '#ffffff',
+    margin: '0 0 8px', lineHeight: '1.3',
   },
   cardDesc: {
-    fontSize: '13px',
-    color: '#94a3b8',
-    margin: '0 0 20px',
-    lineHeight: '1.6'
+    fontSize: 13, color: '#94a3b8',
+    margin: '0 0 20px', lineHeight: '1.65',
   },
   cardDates: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '16px',
-    padding: '14px 16px',
-    background: 'rgba(0,229,255,0.04)',
-    border: '1px solid rgba(0,229,255,0.08)',
-    borderRadius: '12px',
-    marginBottom: '20px'
+    display: 'flex', alignItems: 'center', gap: 16,
+    padding: '13px 16px',
+    background: 'rgba(124,58,237,0.06)',
+    border: '1px solid rgba(139,92,246,0.15)',
+    borderRadius: 12, marginBottom: 20,
   },
-  dateItem: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '2px',
-    flex: 1
-  },
+  dateItem: { display: 'flex', flexDirection: 'column', gap: 3, flex: 1 },
   dateLabel: {
-    fontSize: '10px',
-    color: '#64748b',
-    textTransform: 'uppercase',
-    letterSpacing: '0.8px',
-    fontWeight: '600'
+    fontSize: 10, color: '#475569',
+    textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: 700,
   },
-  dateValue: {
-    fontSize: '12px',
-    fontWeight: '600',
-    color: '#cbd5e1'
-  },
-  dateDivider: {
-    width: '1px',
-    height: '30px',
-    background: 'rgba(255,255,255,0.08)'
-  },
-  cardActions: {
-    display: 'flex',
-    gap: '10px'
-  },
+  dateValue: { fontSize: 12, fontWeight: 700, color: '#e2e8f0' },
+  dateDivider: { width: 1, height: 30, background: 'rgba(139,92,246,0.2)' },
+  cardActions: { display: 'flex', gap: 10 },
   actionBtn: {
-    flex: 1,
-    padding: '10px',
-    border: 'none',
-    borderRadius: '10px',
-    fontSize: '13px',
-    fontWeight: '600',
-    cursor: 'pointer',
-    background: 'rgba(255,255,255,0.05)',
-    color: '#94a3b8',
-    transition: 'all 0.2s ease'
+    flex: 1, padding: '10px', border: '1px solid rgba(139,92,246,0.25)',
+    borderRadius: 10, fontSize: 13, fontWeight: 700,
+    cursor: 'pointer', background: 'rgba(255,255,255,0.05)',
+    color: '#94a3b8', transition: 'all 0.2s ease',
+    fontFamily: "'Outfit', sans-serif",
   },
   actionBtnPrimary: {
-    flex: 1,
-    padding: '10px',
-    border: 'none',
-    borderRadius: '10px',
-    fontSize: '13px',
-    fontWeight: '700',
-    transition: 'all 0.3s',
-    color: 'white',
-    cursor: 'pointer'
+    flex: 1, padding: '10px', border: 'none', borderRadius: 10,
+    fontSize: 13, fontWeight: 700,
+    transition: 'all 0.3s ease', color: '#fff',
+    cursor: 'pointer', fontFamily: "'Outfit', sans-serif",
   },
-  submissionList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '10px'
-  },
+  submissionList: { display: 'flex', flexDirection: 'column', gap: 10 },
   submissionCard: {
-    background: 'rgba(15,23,42,0.6)',
+    background: 'rgba(26,26,46,0.7)',
     backdropFilter: 'blur(12px)',
-    WebkitBackdropFilter: 'blur(12px)',
-    borderRadius: '14px',
-    padding: '16px 20px',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    border: '1px solid rgba(255,255,255,0.06)',
-    transition: 'all 0.2s ease',
-    cursor: 'pointer'
+    borderRadius: 14, padding: '16px 20px',
+    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+    border: '1px solid rgba(139,92,246,0.2)',
+    transition: 'all 0.25s ease', cursor: 'pointer',
   },
-  subLeft: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '14px'
-  },
-  subStatusDot: {
-    width: '10px',
-    height: '10px',
-    borderRadius: '50%',
-    flexShrink: 0
-  },
-  subQuestion: {
-    fontSize: '14px',
-    fontWeight: '700',
-    color: '#e2e8f0',
-    margin: '0 0 2px'
-  },
-  subContest: {
-    fontSize: '12px',
-    color: '#64748b',
-    margin: 0
-  },
-  subRight: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px'
-  },
+  subLeft: { display: 'flex', alignItems: 'center', gap: 14 },
+  subStatusDot: { width: 10, height: 10, borderRadius: '50%', flexShrink: 0 },
+  subQuestion: { fontSize: 14, fontWeight: 700, color: '#f1f5f9', margin: '0 0 2px' },
+  subContest: { fontSize: 12, color: '#64748b', margin: 0 },
+  subRight: { display: 'flex', alignItems: 'center', gap: 10 },
   subLang: {
-    fontSize: '12px',
-    background: 'rgba(0,229,255,0.08)',
-    color: '#00e5ff',
-    padding: '4px 10px',
-    borderRadius: '8px',
-    fontWeight: '600',
-    border: '1px solid rgba(0,229,255,0.15)'
+    fontSize: 12, background: 'rgba(124,58,237,0.12)',
+    color: '#a855f7', padding: '4px 10px', borderRadius: 8,
+    fontWeight: 700, border: '1px solid rgba(124,58,237,0.25)',
   },
-  subStatus: {
-    fontSize: '12px',
-    fontWeight: '700',
-    padding: '4px 12px',
-    borderRadius: '20px',
-    textTransform: 'capitalize'
-  },
-  subScore: {
-    fontSize: '13px',
-    fontWeight: '800',
-    color: '#f1f5f9'
-  },
-  subDate: {
-    fontSize: '12px',
-    color: '#475569'
-  },
+  subStatus: { fontSize: 12, fontWeight: 700, padding: '4px 12px', borderRadius: 20, textTransform: 'capitalize' },
+  subScore: { fontSize: 13, fontWeight: 800, color: '#f1f5f9' },
+  subDate: { fontSize: 12, color: '#475569' },
   skeletonCard: {
-    background: 'rgba(15,23,42,0.5)',
-    border: '1px solid rgba(255,255,255,0.05)',
-    borderRadius: '20px',
-    padding: '24px',
-    animation: 'pulse 1.5s ease-in-out infinite'
+    background: 'rgba(26,26,46,0.5)',
+    border: '1px solid rgba(139,92,246,0.1)',
+    borderRadius: 20, padding: 24,
+    animation: 'pulse 1.5s ease-in-out infinite',
   },
   skeletonTitle: {
-    height: '20px',
-    background: 'rgba(255,255,255,0.06)',
-    borderRadius: '8px',
-    marginBottom: '12px',
-    width: '60%'
+    height: 20, background: 'rgba(139,92,246,0.1)',
+    borderRadius: 8, marginBottom: 12, width: '60%',
   },
   skeletonText: {
-    height: '14px',
-    background: 'rgba(255,255,255,0.04)',
-    borderRadius: '8px',
-    marginBottom: '8px',
-    width: '80%'
+    height: 14, background: 'rgba(139,92,246,0.07)',
+    borderRadius: 8, marginBottom: 8, width: '80%',
   },
   empty: {
-    textAlign: 'center',
-    padding: '80px 20px',
-    background: 'rgba(15,23,42,0.5)',
+    textAlign: 'center', padding: '80px 20px',
+    background: 'rgba(22,22,42,0.7)',
     backdropFilter: 'blur(12px)',
-    WebkitBackdropFilter: 'blur(12px)',
-    borderRadius: '20px',
-    border: '1px solid rgba(255,255,255,0.06)'
+    border: '1px solid rgba(139,92,246,0.18)',
+    borderRadius: 22,
   },
-  emptyIcon: { fontSize: '60px', marginBottom: '16px' },
-  emptyTitle: {
-    fontSize: '20px',
-    fontWeight: '700',
-    color: '#f1f5f9',
-    margin: '0 0 8px'
-  },
-  emptySub: {
-    fontSize: '14px',
-    color: '#64748b',
-    margin: 0
-  },
+  emptyIcon: { fontSize: 60, marginBottom: 16 },
+  emptyTitle: { fontSize: 20, fontWeight: 800, color: '#f1f5f9', margin: '0 0 8px' },
+  emptySub: { fontSize: 14, color: '#64748b', margin: 0 },
   overlay: {
-    position: 'fixed',
-    top: 0, left: 0, right: 0, bottom: 0,
-    background: 'rgba(0,0,0,0.8)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 1000,
-    backdropFilter: 'blur(8px)'
+    position: 'fixed', inset: 0,
+    background: 'rgba(0,0,0,0.85)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    zIndex: 1000, backdropFilter: 'blur(10px)',
   },
   modal: {
-    background: 'rgba(15,23,42,0.95)',
+    background: 'rgba(16,16,30,0.97)',
     backdropFilter: 'blur(24px)',
-    WebkitBackdropFilter: 'blur(24px)',
-    border: '1px solid rgba(0,229,255,0.2)',
-    borderRadius: '24px',
-    padding: '40px',
-    width: '100%',
-    maxWidth: '440px',
-    textAlign: 'center',
-    animation: 'modalIn 0.3s ease-out',
-    boxShadow: '0 30px 80px rgba(0,0,0,0.7)'
+    border: '1px solid rgba(139,92,246,0.35)',
+    borderRadius: 24, padding: 40,
+    width: '100%', maxWidth: 440, textAlign: 'center',
+    animation: 'fadeInScale 0.4s cubic-bezier(0.16,1,0.3,1)',
+    boxShadow: '0 30px 80px rgba(0,0,0,0.8)',
   },
-  modalIcon: { fontSize: '52px', marginBottom: '16px' },
-  modalTitle: {
-    fontSize: '22px',
-    fontWeight: '800',
-    color: '#f1f5f9',
-    margin: '0 0 12px'
-  },
+  modalIcon: { fontSize: 52, marginBottom: 16 },
+  modalTitle: { fontSize: 22, fontWeight: 800, color: '#f1f5f9', margin: '0 0 12px' },
   modalInfo: {
-    background: 'rgba(0,229,255,0.05)',
-    border: '1px solid rgba(0,229,255,0.1)',
-    borderRadius: '14px',
-    padding: '16px',
-    marginBottom: '20px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '10px',
-    textAlign: 'left'
+    background: 'rgba(124,58,237,0.06)',
+    border: '1px solid rgba(139,92,246,0.2)',
+    borderRadius: 14, padding: 16, marginBottom: 20,
+    display: 'flex', flexDirection: 'column', gap: 10, textAlign: 'left',
   },
-  modalInfoItem: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center'
-  },
-  modalInfoLabel: {
-    fontSize: '13px',
-    color: '#64748b',
-    fontWeight: '500'
-  },
-  modalInfoValue: {
-    fontSize: '13px',
-    fontWeight: '700',
-    color: '#e2e8f0'
-  },
-  modalActions: {
-    display: 'flex',
-    gap: '12px'
-  },
+  modalInfoItem: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
+  modalInfoLabel: { fontSize: 13, color: '#64748b', fontWeight: 500 },
+  modalInfoValue: { fontSize: 13, fontWeight: 700, color: '#e2e8f0' },
+  modalActions: { display: 'flex', gap: 12 },
   cancelBtn: {
-    flex: 1,
-    padding: '12px',
+    flex: 1, padding: 12,
     background: 'rgba(255,255,255,0.05)',
-    border: '1px solid rgba(255,255,255,0.1)',
-    borderRadius: '12px',
-    fontSize: '14px',
-    fontWeight: '600',
-    cursor: 'pointer',
-    color: '#94a3b8',
-    fontFamily: "'Outfit', sans-serif"
+    border: '1px solid rgba(255,255,255,0.12)',
+    borderRadius: 12, fontSize: 14, fontWeight: 600,
+    cursor: 'pointer', color: '#94a3b8',
+    fontFamily: "'Outfit', sans-serif",
   },
   confirmBtn: {
-    flex: 1,
-    padding: '12px',
-    background: 'linear-gradient(135deg, #00e5ff, #0077ff)',
-    border: 'none',
-    borderRadius: '12px',
-    fontSize: '14px',
-    fontWeight: '700',
-    cursor: 'pointer',
-    color: 'white',
-    boxShadow: '0 4px 15px rgba(0,229,255,0.35)',
-    fontFamily: "'Outfit', sans-serif"
+    flex: 1, padding: 12,
+    background: 'linear-gradient(135deg, #7c3aed, #06b6d4)',
+    border: 'none', borderRadius: 12,
+    fontSize: 14, fontWeight: 700,
+    cursor: 'pointer', color: '#fff',
+    boxShadow: '0 4px 20px rgba(124,58,237,0.4)',
+    fontFamily: "'Outfit', sans-serif",
   },
-  formField: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '6px'
-  },
+  formField: { display: 'flex', flexDirection: 'column', gap: 6 },
   formLabel: {
-    fontSize: '12px',
-    fontWeight: '600',
-    color: '#94a3b8',
-    textAlign: 'left',
-    textTransform: 'uppercase',
-    letterSpacing: '0.5px'
+    fontSize: 11, fontWeight: 700, color: '#94a3b8',
+    textAlign: 'left', textTransform: 'uppercase', letterSpacing: '0.8px',
   },
   formInput: {
-    padding: '11px 14px',
-    border: '1.5px solid rgba(255,255,255,0.1)',
-    borderRadius: '10px',
-    fontSize: '14px',
-    outline: 'none',
+    padding: '12px 14px',
+    border: '1.5px solid rgba(139,92,246,0.25)',
+    borderRadius: 10, fontSize: 14, outline: 'none',
     color: '#f1f5f9',
-    transition: 'border 0.2s',
-    background: 'rgba(255,255,255,0.05)',
-    fontFamily: "'Inter', sans-serif"
-  }
+    background: 'rgba(255,255,255,0.04)',
+    fontFamily: "'Outfit', sans-serif",
+    transition: 'border 0.25s ease',
+  },
 };
 
-export default CandidateDashboard;
+export default CandidateDashboard;
