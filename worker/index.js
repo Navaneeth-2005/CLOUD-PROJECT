@@ -340,6 +340,23 @@ const pollForSubmissions = async () => {
     }
   } catch (err) {
     console.error('❌ SQS Receive error:', err.message);
+    console.log('🔄 SQS failed. Falling back to DB Poll to process pending submissions...');
+    try {
+      const pending = await Submission.findAll({
+        where: { status: 'pending' },
+        limit: 5,
+        order: [['createdAt', 'ASC']]
+      });
+
+      if (pending.length > 0) {
+        console.log(`📋 Found ${pending.length} pending submission(s) (DB Poll Fallback)`);
+        for (const submission of pending) {
+          await processSubmission(submission.id);
+        }
+      }
+    } catch (dbErr) {
+      console.error('❌ DB Poll fallback error:', dbErr.message);
+    }
     await new Promise(resolve => setTimeout(resolve, 3000)); // Delay on error
   }
 };
