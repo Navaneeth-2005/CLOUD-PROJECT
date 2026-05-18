@@ -302,16 +302,17 @@ router.get('/question/:questionId/ai-hints', authMiddleware, async (req, res) =>
         const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
         const prompt = `You are an AI coding tutor for CodeStorm.
-Provide hints for the following programming question:
+Provide ultra-concise, brief, and short hints for the following programming question:
 Title: ${question.title}
 Description: ${question.description}
 Difficulty: ${question.difficulty}
 
-Generate:
-1. Conceptual Hint: A helpful conceptual hint explaining the logical angle to solve the problem (WITHOUT writing code).
-2. Edge Cases: 3 critical boundary edge cases candidates should verify.
-3. Algorithm Tag: The primary algorithm category name (e.g., Dynamic Programming, BFS, Two-Pointer).
-4. Algorithm Details: A step-by-step strategic explanation of the algorithm implementation.
+Requirements:
+- Keep all fields extremely short, direct, and straight-to-the-point (avoid long explanations or paragraphs).
+- "conceptHint": Max 2 short sentences giving a high-level conceptual clue.
+- "edgeCases": Exactly 3 very brief bullet points (each bullet max 10 words).
+- "algorithmTag": Short category name (e.g., "Two-Pointer / Sorting").
+- "algorithmDetails": Exactly 3 very short, bulleted implementation steps (Max 2 short sentences total).
 
 Return the response strictly as a JSON object with this exact format:
 {
