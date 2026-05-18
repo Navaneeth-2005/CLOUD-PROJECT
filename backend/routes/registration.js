@@ -158,4 +158,65 @@ router.get('/contest/:contestId', authMiddleware, roleMiddleware('company', 'adm
   }
 });
 
+// Unlock AI Algorithm hint (deducts 25% of question marks)
+router.post('/unlock-hint', authMiddleware, roleMiddleware('candidate'), async (req, res) => {
+  try {
+    const { contestId, questionId } = req.body;
+
+    const registration = await ContestRegistration.findOne({
+      where: { userId: req.user.id, contestId }
+    });
+
+    if (!registration) {
+      return res.status(404).json({ message: 'You are not registered for this contest' });
+    }
+
+    if (registration.submittedAt) {
+      return res.status(400).json({ message: 'Contest is already submitted' });
+    }
+
+    let unlocked = [];
+    if (registration.unlockedAlgorithms) {
+      unlocked = registration.unlockedAlgorithms.split(',').map(id => id.trim());
+    }
+
+    if (!unlocked.includes(String(questionId))) {
+      unlocked.push(String(questionId));
+      await registration.update({ unlockedAlgorithms: unlocked.join(',') });
+    }
+
+    res.json({
+      message: 'Algorithm unlocked successfully! A 25% score penalty is applied to this question.',
+      unlockedAlgorithms: unlocked
+    });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// Check status of unlocked algorithm hints for a question
+router.get('/hint-status/:contestId/:questionId', authMiddleware, roleMiddleware('candidate'), async (req, res) => {
+  try {
+    const { contestId, questionId } = req.params;
+
+    const registration = await ContestRegistration.findOne({
+      where: { userId: req.user.id, contestId }
+    });
+
+    if (!registration) {
+      return res.status(404).json({ message: 'You are not registered for this contest' });
+    }
+
+    let isUnlocked = false;
+    if (registration.unlockedAlgorithms) {
+      const unlocked = registration.unlockedAlgorithms.split(',').map(id => id.trim());
+      isUnlocked = unlocked.includes(String(questionId));
+    }
+
+    res.json({ isUnlocked });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
 module.exports = router;

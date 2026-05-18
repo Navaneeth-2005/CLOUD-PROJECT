@@ -37,6 +37,11 @@ const ContestRegistration = sequelize.define('ContestRegistration', {
     type: DataTypes.DATE,
     allowNull: true,
     defaultValue: null
+  },
+  unlockedAlgorithms: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+    defaultValue: null
   }
 }, {
   timestamps: true

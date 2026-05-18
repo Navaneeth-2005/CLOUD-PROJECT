@@ -58,6 +58,14 @@ const TestCase = sequelize.define('TestCase', {
   marks: DataTypes.INTEGER
 }, { timestamps: true });
 
+// ContestRegistration model
+const ContestRegistration = sequelize.define('ContestRegistration', {
+  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+  userId: DataTypes.INTEGER,
+  contestId: DataTypes.INTEGER,
+  unlockedAlgorithms: DataTypes.TEXT
+}, { timestamps: true });
+
 // Language config
 const languageConfig = {
   python: {
@@ -87,7 +95,7 @@ const executeCode = (language, code, input) => {
       fs.mkdirSync(tmpDir, { recursive: true });
       const codeFile = path.join(tmpDir, config.filename);
       const inputFile = path.join(tmpDir, 'input.txt');
-      
+
       fs.writeFileSync(codeFile, code, 'utf8');
       fs.writeFileSync(inputFile, (input && input.trim()) ? input : '\n', 'utf8');
 
@@ -101,9 +109,9 @@ const executeCode = (language, code, input) => {
 
       exec(runCmd, { timeout: 15000 }, (runErr, stdout, stderr) => {
         const executionTime = Date.now() - startTime;
-        
+
         // Cleanup temp files
-        exec(`rm -rf ${tmpDir}`, () => {});
+        exec(`rm -rf ${tmpDir}`, () => { });
 
         if (runErr) {
           if (runErr.killed) {
@@ -126,7 +134,7 @@ const executeCode = (language, code, input) => {
       });
 
     } catch (err) {
-      exec(`rm -rf ${tmpDir}`, () => {});
+      exec(`rm -rf ${tmpDir}`, () => { });
       return resolve({
         success: false, output: '', error: `Failed to setup execution: ${err.message}`, time: 0
       });
@@ -243,11 +251,28 @@ const processSubmission = async (submissionId, overrideCode = null) => {
 
     const totalTests = testCases.length;
 
-    const score = earnedMarks > 0
+    const baseScore = earnedMarks > 0
       ? earnedMarks
       : passed === totalTests
-      ? question.marks
-      : Math.floor((passed / totalTests) * question.marks);
+        ? question.marks
+        : Math.floor((passed / totalTests) * question.marks);
+
+    // 25% score deduction if AI Algorithm Hint was unlocked
+    let score = baseScore;
+    try {
+      const reg = await ContestRegistration.findOne({
+        where: { userId: submission.userId, contestId: submission.contestId }
+      });
+      if (reg && reg.unlockedAlgorithms) {
+        const unlockedList = reg.unlockedAlgorithms.split(',').map(id => id.trim());
+        if (unlockedList.includes(String(submission.questionId))) {
+          score = Math.floor(baseScore * 0.75);
+          console.log(`  💡 25% AI Hint deduction applied for user ${submission.userId} on question ${submission.questionId}. Score: ${baseScore} -> ${score}`);
+        }
+      }
+    } catch (regErr) {
+      console.error('  ❌ Error checking hint unlock deduction:', regErr.message);
+    }
 
     const finalStatus = passed === totalTests ? 'accepted' : 'rejected';
 
@@ -269,7 +294,7 @@ const processSubmission = async (submissionId, overrideCode = null) => {
         { status: 'error', errorMessage: err.message },
         { where: { id: submissionId } }
       );
-    } catch (e) {}
+    } catch (e) { }
   }
 };
 
@@ -304,7 +329,7 @@ const pollForSubmissions = async () => {
       MaxNumberOfMessages: 5,
       WaitTimeSeconds: 20 // Long polling
     });
-    
+
     const response = await sqsClient.send(command);
     if (response.Messages && response.Messages.length > 0) {
       console.log(`📋 Received ${response.Messages.length} submission(s) from SQS`);

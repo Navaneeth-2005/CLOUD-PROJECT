@@ -22,6 +22,10 @@ const CodeEditor = () => {
   const [showExitModal, setShowExitModal] = useState(false);
   const [showSubmitContestModal, setShowSubmitContestModal] = useState(false);
   const [submittingContest, setSubmittingContest] = useState(false);
+  const [hintsData, setHintsData] = useState(null);
+  const [loadingHints, setLoadingHints] = useState(false);
+  const [showUnlockModal, setShowUnlockModal] = useState(false);
+  const [unlockingHint, setUnlockingHint] = useState(false);
   const timerRef = useRef(null);
   const tabSwitchCount = useRef(0);
 
@@ -272,6 +276,44 @@ int main() {
     }, 2000);
   };
 
+  const fetchQuestionHints = async () => {
+    if (!questionId) return;
+    setLoadingHints(true);
+    try {
+      const res = await API.get(`/contests/question/${questionId}/ai-hints`);
+      setHintsData(res.data);
+    } catch (err) {
+      console.error('Failed to fetch hints:', err.message);
+    } finally {
+      setLoadingHints(false);
+    }
+  };
+
+  const unlockAlgorithmHint = async () => {
+    setUnlockingHint(true);
+    try {
+      const res = await API.post('/registration/unlock-hint', {
+        contestId: parseInt(contestId),
+        questionId: parseInt(questionId)
+      });
+      toast.success(res.data.message);
+      setShowUnlockModal(false);
+      await fetchQuestionHints();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to unlock strategy');
+    } finally {
+      setUnlockingHint(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activePanel === 'hints') {
+      fetchQuestionHints();
+    } else {
+      setHintsData(null);
+    }
+  }, [activePanel, questionId]);
+
   const handleSubmitContest = async () => {
     setSubmittingContest(true);
     try {
@@ -423,7 +465,7 @@ int main() {
 
           {/* Panel Tabs */}
           <div style={styles.panelTabs}>
-            {['problem', 'result'].map(panel => (
+            {['problem', 'hints', 'result'].map(panel => (
               <button
                 key={panel}
                 style={{
@@ -435,7 +477,7 @@ int main() {
                 }}
                 onClick={() => setActivePanel(panel)}
               >
-                {panel === 'problem' ? '📋 Problem' : '📊 Result'}
+                {panel === 'problem' ? '📋 Problem' : panel === 'hints' ? '✨ Ask AI Hint' : '📊 Result'}
               </button>
             ))}
           </div>
@@ -528,6 +570,93 @@ int main() {
                   No extra spaces or blank lines.
                 </p>
               </div>
+            </div>
+          )}
+
+          {/* Hints Panel */}
+          {activePanel === 'hints' && (
+            <div style={styles.hintsPanel}>
+              {loadingHints ? (
+                <div style={{ ...styles.noResult, animation: 'pulse 1.5s infinite' }}>
+                  <div style={{ ...styles.noResultIcon, fontSize: 40 }}>🧠</div>
+                  <p style={{ ...styles.noResultText, color: '#4fc3f7', fontWeight: 600 }}>
+                    Consulting CodeStorm AI Tutor...
+                  </p>
+                </div>
+              ) : !hintsData ? (
+                <div style={styles.noResult}>
+                  <div style={styles.noResultIcon}>💡</div>
+                  <p style={styles.noResultText}>Unable to load hints for this question.</p>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16, animation: 'fadeIn 0.3s ease-out' }}>
+                  {/* Conceptual Hint */}
+                  <div style={styles.hintCard}>
+                    <h4 style={{ ...styles.sectionLabel, color: '#4fc3f7', marginBottom: 6 }}>
+                      💡 Conceptual Hint
+                    </h4>
+                    <p style={{ ...styles.problemDesc, fontSize: 13.5 }}>
+                      {hintsData.conceptHint}
+                    </p>
+                  </div>
+
+                  {/* Edge Cases */}
+                  <div style={styles.edgeCasesCard}>
+                    <h4 style={{ ...styles.sectionLabel, color: '#f59e0b', marginBottom: 6 }}>
+                      ⚠️ Edge Cases to Verify
+                    </h4>
+                    <p style={{ ...styles.problemDesc, fontSize: 13.5, whiteSpace: 'pre-wrap' }}>
+                      {hintsData.edgeCases}
+                    </p>
+                  </div>
+
+                  {/* Algorithm & Strategy */}
+                  <div style={styles.algCard}>
+                    <h4 style={{ ...styles.sectionLabel, color: '#8b5cf6', marginBottom: 6 }}>
+                      🧩 Algorithm & Strategy
+                    </h4>
+                    {!hintsData.isAlgorithmUnlocked ? (
+                      <div style={styles.lockOverlay}>
+                        <div style={{ fontSize: 24 }}>🔒</div>
+                        <p style={{ fontSize: 13, color: '#94a3b8', margin: '0 0 4px', lineHeight: '1.6' }}>
+                          Unlock the exact algorithm category and step-by-step strategy.
+                        </p>
+                        <p style={{ fontSize: 12, color: '#f87171', fontWeight: 700, margin: '0 0 8px' }}>
+                          ⚠️ Warning: Unlocking will deduct 25% of the total marks for this question!
+                        </p>
+                        <button
+                          style={styles.unlockBtn}
+                          onClick={() => setShowUnlockModal(true)}
+                        >
+                          🔓 Reveal Strategy (-25% Marks)
+                        </button>
+                      </div>
+                    ) : (
+                      <div style={{ animation: 'fadeIn 0.4s ease-out' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                          <span style={{
+                            fontSize: 11, fontWeight: 800, color: '#ef4444',
+                            background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)',
+                            padding: '3px 8px', borderRadius: 4, textTransform: 'uppercase'
+                          }}>
+                            ⚠️ 25% Penalty Applied
+                          </span>
+                          <span style={{
+                            fontSize: 12, fontWeight: 700, color: '#8b5cf6',
+                            background: 'rgba(139,92,246,0.15)', border: '1px solid rgba(139,92,246,0.3)',
+                            padding: '3px 10px', borderRadius: 20
+                          }}>
+                            {hintsData.algorithmTag}
+                          </span>
+                        </div>
+                        <p style={{ ...styles.problemDesc, fontSize: 13.5 }}>
+                          {hintsData.algorithmDetails}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -735,6 +864,44 @@ int main() {
                 disabled={submittingContest}
               >
                 {submittingContest ? 'Submitting...' : '✓ Submit Contest'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Unlock AI Strategy Modal */}
+      {showUnlockModal && (
+        <div style={styles.overlay} onClick={() => setShowUnlockModal(false)}>
+          <div style={styles.exitModal} onClick={e => e.stopPropagation()}>
+            <div style={{ ...styles.exitIcon, color: '#f59e0b' }}>🔓</div>
+            <h2 style={styles.exitTitle}>Unlock AI Strategy?</h2>
+            <p style={styles.exitDesc}>
+              Are you sure you want to reveal the primary algorithm strategy for this question?
+            </p>
+            <div style={styles.exitWarningBox}>
+              <p style={{ ...styles.exitWarningText, color: '#ef4444', fontWeight: 700 }}>
+                🚨 A permanent 25% score deduction will be applied to this question's total points upon submission!
+              </p>
+            </div>
+            <div style={styles.exitActions}>
+              <button
+                style={{
+                  ...styles.stayBtn,
+                  background: 'rgba(255,255,255,0.08)',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  boxShadow: 'none'
+                }}
+                onClick={() => setShowUnlockModal(false)}
+              >
+                Cancel
+              </button>
+              <button
+                style={{ ...styles.leaveBtn, background: '#7c3aed', border: 'none', color: 'white', opacity: unlockingHint ? 0.6 : 1 }}
+                onClick={unlockAlgorithmHint}
+                disabled={unlockingHint}
+              >
+                {unlockingHint ? 'Unlocking...' : 'Reveal Strategy (-25%)'}
               </button>
             </div>
           </div>
@@ -984,6 +1151,46 @@ const styles = {
     cursor: 'pointer', color: '#ef4444',
     transition: 'all 0.3s', fontFamily: "'Outfit', sans-serif",
   },
+  hintsPanel: {
+    flex: 1, overflowY: 'auto', padding: '20px',
+    display: 'flex', flexDirection: 'column', gap: 16
+  },
+  hintCard: {
+    background: 'rgba(79,195,247,0.03)',
+    border: '1px solid rgba(79,195,247,0.15)',
+    borderLeft: '4px solid #4fc3f7',
+    borderRadius: 10, padding: 14,
+    boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+  },
+  edgeCasesCard: {
+    background: 'rgba(245,158,11,0.03)',
+    border: '1px solid rgba(245,158,11,0.15)',
+    borderLeft: '4px solid #f59e0b',
+    borderRadius: 10, padding: 14,
+    boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+  },
+  algCard: {
+    background: 'rgba(139,92,246,0.03)',
+    border: '1px solid rgba(139,92,246,0.15)',
+    borderLeft: '4px solid #8b5cf6',
+    borderRadius: 10, padding: 14,
+    boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+  },
+  lockOverlay: {
+    display: 'flex', flexDirection: 'column', alignItems: 'center',
+    justifyContent: 'center', padding: '24px 20px',
+    background: 'rgba(13,13,26,0.7)',
+    border: '1px dashed rgba(139,92,246,0.3)',
+    borderRadius: 10, textAlign: 'center', gap: 12
+  },
+  unlockBtn: {
+    background: 'linear-gradient(135deg, #7c3aed, #4c1d95)',
+    color: 'white', border: 'none', padding: '10px 20px',
+    borderRadius: 8, fontSize: 13, fontWeight: 700,
+    cursor: 'pointer', transition: 'all 0.2s',
+    boxShadow: '0 4px 15px rgba(124,58,237,0.4)',
+    fontFamily: "'Outfit', sans-serif"
+  }
 };
 
 export default CodeEditor;
