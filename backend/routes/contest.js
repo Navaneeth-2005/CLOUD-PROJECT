@@ -177,31 +177,75 @@ const ContestRegistration = require('../models/ContestRegistration');
 const generateHeuristicHints = (question) => {
   const desc = (question.description || '').toLowerCase();
   const title = (question.title || '').toLowerCase();
+  const fullText = `${title} ${desc}`;
 
   let conceptHint = 'Analyze the input and output constraints. Start by implementing a simple brute force solution, then see where duplicate calculations can be eliminated.';
   let edgeCases = '*   Empty list / empty string inputs\n*   Boundary cases like inputs containing 0, 1, or negative numbers\n*   Inputs that lead to very large numbers causing integer overflow';
   let algorithmTag = 'Simulation / Greedy';
   let algorithmDetails = 'Use a simple simulation of the problem logic. Alternatively, check if a greedy choice (locally optimal choice) leads to a globally optimal solution.';
 
-  if (desc.includes('shortest') || desc.includes('maze') || desc.includes('traverse') || desc.includes('graph') || desc.includes('tree') || desc.includes('path')) {
+  // Match Two-Sum, Two Pointer, Pairs, target sum, array index search
+  if (
+    fullText.includes('two sum') ||
+    fullText.includes('twosum') ||
+    fullText.includes('pair') ||
+    fullText.includes('two-pointer') ||
+    fullText.includes('two pointer') ||
+    fullText.includes('target sum') ||
+    (fullText.includes('arr') && fullText.includes('target') && fullText.includes('index')) ||
+    (fullText.includes('array') && fullText.includes('target') && fullText.includes('sum'))
+  ) {
+    conceptHint = 'You can optimize the naive O(N^2) brute force by trading memory for speed. Use a key-value store to look up precalculated values or complements in constant time O(1), or sort the array and use convergence pointers.';
+    edgeCases = '*   Multiple valid pairs exist (ensure you return the correct matching indices)\n*   No duplicate or matching pair exists (gracefully handle null or empty bounds)\n*   Using the same index/element twice (e.g., target is 6, array has [3] - must NOT return [0, 0])';
+    algorithmTag = 'Two-Pointer / HashMap Lookup';
+    algorithmDetails = '1. HashMap Approach (Optimal - O(N) Time, O(N) Space):\n   Create a Hash Map. For each element `num` at index `i`, check if `target - num` already exists in the map. If yes, return `[map.get(target - num), i]`. Otherwise, insert `num` with value `i` into the map.\n\n2. Two-Pointer Approach (O(N log N) Time, O(1) Space):\n   Sort the array first. Place one pointer `left` at the beginning and `right` at the end. Check their sum. If `sum == target`, return. If `sum < target`, increment `left`. If `sum > target`, decrement `right`.';
+  } else if (
+    fullText.includes('shortest') ||
+    fullText.includes('maze') ||
+    fullText.includes('traverse') ||
+    fullText.includes('graph') ||
+    fullText.includes('tree') ||
+    fullText.includes('path') ||
+    fullText.includes('bfs') ||
+    fullText.includes('dfs')
+  ) {
     conceptHint = 'Represent this problem as a state graph. Each modification or move corresponds to a directed edge between nodes. Explore states level by level.';
     edgeCases = '*   Graph has multiple disconnected components\n*   Graph contains cycles (ensure you keep track of visited nodes to avoid infinite loops)\n*   Starting state is already the target state';
     algorithmTag = 'Breadth-First Search (BFS) / Depth-First Search (DFS)';
     algorithmDetails = 'Use BFS with a Queue if you want to find the shortest path in an unweighted graph. Use DFS with a Stack (or Recursion) for exhaustive path finding.';
-  } else if (desc.includes('subsequence') || desc.includes('subset') || desc.includes('knapsack') || desc.includes('partition') || desc.includes('maximum sum') || desc.includes('minimum steps') || desc.includes('fibonacci')) {
+  } else if (
+    fullText.includes('subsequence') ||
+    fullText.includes('subset') ||
+    fullText.includes('knapsack') ||
+    fullText.includes('partition') ||
+    fullText.includes('maximum sum') ||
+    fullText.includes('minimum steps') ||
+    fullText.includes('fibonacci') ||
+    fullText.includes('dp')
+  ) {
     conceptHint = 'This problem can be broken down into overlapping subproblems. Try to define a state relation `dp[i]` representing the optimal choice up to index `i`.';
     edgeCases = '*   Input elements are negative\n*   No subset/partition is possible (handle failure boundaries)\n*   Large index values where simple recursion would time out (O(2^N))';
     algorithmTag = 'Dynamic Programming (DP)';
     algorithmDetails = 'Create a table (1D or 2D array) to store intermediate results, or use recursion with memoization (top-down) to optimize time complexity to O(N) or O(N*W).';
-  } else if (desc.includes('interval') || desc.includes('overlap') || desc.includes('meeting') || desc.includes('greedy') || desc.includes('schedule')) {
+  } else if (
+    fullText.includes('interval') ||
+    fullText.includes('overlap') ||
+    fullText.includes('meeting') ||
+    fullText.includes('greedy') ||
+    fullText.includes('schedule')
+  ) {
     conceptHint = 'Consider sorting the inputs first. Often, sorting by start time or end time makes the optimal choice straightforward.';
     edgeCases = '*   Completely overlapping intervals (e.g., [1, 5] and [2, 3])\n*   Intervals with 0 duration (e.g., [2, 2])\n*   No overlaps exist';
     algorithmTag = 'Greedy / Sorting';
     algorithmDetails = 'Sort the intervals/elements by their end times. Iterate through them and greedily select the next non-overlapping element.';
-  } else if (desc.includes('duplicate') || desc.includes('frequency') || desc.includes('unique') || desc.includes('pairs') || desc.includes('sum equals') || desc.includes('two sum')) {
+  } else if (
+    fullText.includes('duplicate') ||
+    fullText.includes('frequency') ||
+    fullText.includes('unique')
+  ) {
     conceptHint = 'You can trade memory for speed. Use a key-value store to look up precalculated values or frequencies in constant time O(1).';
     edgeCases = '*   No duplicate or matching pair exists\n*   The same element cannot be reused (track index references)\n*   Large keys causing hash collisions';
-    algorithmTag = 'HashMap / HashSet / Two-Pointer';
+    algorithmTag = 'HashMap / HashSet';
     algorithmDetails = 'Store the frequency or index of elements in a HashMap. Alternatively, sort the input array and use two pointers (left and right) moving toward each other.';
   }
 
