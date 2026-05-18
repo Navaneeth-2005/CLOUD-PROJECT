@@ -184,8 +184,19 @@ const generateHeuristicHints = (question) => {
   let algorithmTag = 'Simulation / Greedy';
   let algorithmDetails = 'Use a simple simulation of the problem logic. Alternatively, check if a greedy choice (locally optimal choice) leads to a globally optimal solution.';
 
-  // Match Two-Sum, Two Pointer, Pairs, target sum, array index search
+  // Match Three-Sum, Triplets, sum of three
   if (
+    fullText.includes('three sum') ||
+    fullText.includes('threesum') ||
+    fullText.includes('3sum') ||
+    fullText.includes('triplet') ||
+    fullText.includes('sum of three')
+  ) {
+    conceptHint = 'Brute-force checking all triplets takes O(N^3) time. We can optimize this to O(N^2) by sorting the array first, fixing one element, and using a Two-Pointer search for the remaining two elements.';
+    edgeCases = '*   Array contains duplicate triplets (must skip identical values to return only unique triplets)\n*   Array has fewer than 3 elements (handle empty bounds)\n*   All elements are positive or all negative (no target sum possible)';
+    algorithmTag = 'Two-Pointer Convergence / Sorting';
+    algorithmDetails = '1. Sort the array first to handle duplicates and enable two-pointers.\n2. Iterate through the array with index `i`. If `i > 0` and the current number is the same as the previous one, skip it to avoid duplicate triplets.\n3. Place pointer `left` at `i + 1` and `right` at the end of the array.\n4. While `left < right`, compute the sum. If the sum is zero, add the triplet `[nums[i], nums[left], nums[right]]` to your result, then increment `left` and decrement `right` while skipping duplicate elements. If the sum is less than zero, increment `left`. If the sum is greater than zero, decrement `right`.';
+  } else if (
     fullText.includes('two sum') ||
     fullText.includes('twosum') ||
     fullText.includes('pair') ||
