@@ -312,7 +312,7 @@ Requirements:
 - "conceptHint": Max 2 short sentences giving a high-level conceptual clue.
 - "edgeCases": Exactly 3 very brief bullet points (each bullet max 10 words).
 - "algorithmTag": Short category name (e.g., "Two-Pointer / Sorting").
-- "algorithmDetails": Exactly 3 very short, bulleted implementation steps (Max 2 short sentences total).
+- "algorithmDetails": Exactly 1 short sentence stating the core algorithm to use (e.g., "Use Dynamic Programming to memoize overlapping subproblems.", "Use Dijkstra's algorithm for shortest paths."). Do NOT provide step-by-step implementation details.
 
 Return the response strictly as a JSON object with this exact format:
 {
