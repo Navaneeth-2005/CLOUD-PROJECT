@@ -268,12 +268,14 @@ int main() {
     const video = videoRef.current;
     const canvas = canvasRef.current;
     
-    if (video.videoWidth === 0 || video.videoHeight === 0) return;
+    // Fallback to standard webcam dimensions if browser throttles videoWidth/videoHeight to 0 due to invisibility
+    const width = video.videoWidth || 640;
+    const height = video.videoHeight || 480;
 
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    canvas.width = width;
+    canvas.height = height;
     const ctx = canvas.getContext('2d');
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    ctx.drawImage(video, 0, 0, width, height);
 
     canvas.toBlob(async (blob) => {
       if (!blob) return;
@@ -414,7 +416,7 @@ int main() {
   return (
     <div style={styles.page}>
       {/* Hidden elements for proctoring */}
-      <video ref={videoRef} autoPlay playsInline muted style={{ display: 'none' }} />
+      <video ref={videoRef} autoPlay playsInline muted style={{ position: 'absolute', opacity: 0, width: '1px', height: '1px', pointerEvents: 'none', zIndex: -100 }} />
       <canvas ref={canvasRef} style={{ display: 'none' }} />
       
       <style>{`
