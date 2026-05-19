@@ -5,7 +5,7 @@ const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
 const { TranscribeClient, StartTranscriptionJobCommand, GetTranscriptionJobCommand } = require('@aws-sdk/client-transcribe');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const axios = require('axios');
-const authMiddleware = require('../middleware/auth');
+const { authMiddleware } = require('../middleware/auth');
 const crypto = require('crypto');
 
 // Setup Multer to store audio files in memory
