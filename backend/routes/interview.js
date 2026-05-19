@@ -48,49 +48,27 @@ router.post('/start', authMiddleware, upload.single('audio'), async (req, res) =
     const mediaUri = `s3://${s3Bucket}/${fileKey}`;
     const jobName = `CodeStorm_Interview_${crypto.randomBytes(4).toString('hex')}_${Date.now()}`;
 
-    // 2. Start AWS Transcribe Job
-    const startJobCmd = new StartTranscriptionJobCommand({
-      TranscriptionJobName: jobName,
-      LanguageCode: 'en-US',
-      MediaFormat: 'webm',
-      Media: { MediaFileUri: mediaUri }
-      // Omitting OutputBucketName forces Transcribe to return a secure pre-signed URI
-    });
+    // Note: We are uploading the file to S3 to fulfill AWS requirements,
+    // but we are intentionally NOT triggering AWS Transcribe here because
+    // the AWS account does not have an active subscription for Transcribe,
+    // which throws a SubscriptionRequiredException.
+    // Instead, the frontend generates the transcript for free via Web Speech API.
 
-    await transcribeClient.send(startJobCmd);
-
-    res.json({ success: true, jobName, message: 'Transcription started successfully' });
+    res.json({ success: true, jobName, message: 'Audio uploaded successfully to S3' });
   } catch (error) {
     console.error('Error starting transcription:', error);
     res.status(500).json({ message: 'Failed to start AI interview analysis', error: error.message });
   }
 });
 
-// Route 2: Poll Transcription Status & Generate AI Feedback
+// Route 2: Generate AI Feedback from Client Transcript
 router.post('/analyze', authMiddleware, async (req, res) => {
   try {
-    const { jobName, code, questionTitle, questionDesc } = req.body;
+    const { jobName, code, questionTitle, questionDesc, clientTranscript } = req.body;
 
-    // 1. Check Transcribe Job Status
-    const getJobCmd = new GetTranscriptionJobCommand({ TranscriptionJobName: jobName });
-    const jobData = await transcribeClient.send(getJobCmd);
-    
-    const status = jobData.TranscriptionJob.TranscriptionJobStatus;
+    const transcriptText = clientTranscript || '';
 
-    if (status === 'IN_PROGRESS' || status === 'QUEUED') {
-      return res.json({ status: 'processing', message: 'Analyzing your audio...' });
-    }
-
-    if (status === 'FAILED') {
-      return res.status(500).json({ status: 'failed', message: 'AWS Transcribe failed to process the audio.' });
-    }
-
-    // 2. Fetch Transcript Text
-    const transcriptUri = jobData.TranscriptionJob.Transcript.TranscriptFileUri;
-    const response = await axios.get(transcriptUri);
-    const transcriptText = response.data.results.transcripts[0]?.transcript || '';
-
-    if (!transcriptText) {
+    if (!transcriptText || transcriptText.trim() === '') {
       return res.json({ status: 'completed', feedback: { 
         communicationScore: 0, 
         technicalScore: 0, 
@@ -99,7 +77,7 @@ router.post('/analyze', authMiddleware, async (req, res) => {
       }});
     }
 
-    // 3. Send to Gemini 2.0 for Mock Interview Feedback
+    // Send to Gemini 2.0 for Mock Interview Feedback
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 

@@ -11,6 +11,8 @@ const MockInterview = () => {
   
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
+  const recognitionRef = useRef(null);
+  const finalTranscriptRef = useRef('');
 
   const interviewQuestions = [
     {
@@ -49,6 +51,7 @@ const MockInterview = () => {
       const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
+      finalTranscriptRef.current = '';
 
       mediaRecorder.ondataavailable = (e) => {
         if (e.data.size > 0) {
@@ -60,6 +63,29 @@ const MockInterview = () => {
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
         await submitInterviewAudio(audioBlob);
       };
+
+      // Initialize Web Speech API for real-time transcription (free, no AWS subscription needed)
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (SpeechRecognition) {
+        const recognition = new SpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = 'en-US';
+
+        recognition.onresult = (event) => {
+          let interimTranscript = '';
+          for (let i = event.resultIndex; i < event.results.length; ++i) {
+            if (event.results[i].isFinal) {
+              finalTranscriptRef.current += event.results[i][0].transcript + ' ';
+            } else {
+              interimTranscript += event.results[i][0].transcript;
+            }
+          }
+        };
+
+        recognition.start();
+        recognitionRef.current = recognition;
+      }
 
       mediaRecorder.start();
       setIsRecording(true);
@@ -73,6 +99,7 @@ const MockInterview = () => {
 
   const stopInterviewRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
+      if (recognitionRef.current) recognitionRef.current.stop();
       mediaRecorderRef.current.stop();
       mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
       setIsRecording(false);
@@ -85,13 +112,17 @@ const MockInterview = () => {
       const formData = new FormData();
       formData.append('audio', audioBlob, 'interview.webm');
 
+      // 1. Upload to S3 via backend
       const res = await API.post('/interviews/start', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
       const jobName = res.data.jobName;
       setInterviewJobName(jobName);
-      pollInterviewAnalysis(jobName);
+      
+      // 2. Pass transcript directly to analyze
+      const userTranscript = finalTranscriptRef.current.trim() || "The user did not speak clearly or their mic was muted.";
+      analyzeInterviewDirectly(userTranscript, jobName);
     } catch (err) {
       console.error('Audio upload failed', err);
       toast.error('Failed to upload interview audio.');
@@ -99,32 +130,28 @@ const MockInterview = () => {
     }
   };
 
-  const pollInterviewAnalysis = (jobName) => {
-    const pollInterval = setInterval(async () => {
-      try {
-        const res = await API.post('/interviews/analyze', {
-          jobName,
-          code: '', // No code for standalone interviews
-          questionTitle: question.title,
-          questionDesc: question.description
-        });
+  const analyzeInterviewDirectly = async (transcriptText, jobName) => {
+    try {
+      const res = await API.post('/interviews/analyze', {
+        jobName,
+        code: '', 
+        questionTitle: question.title,
+        questionDesc: question.description,
+        clientTranscript: transcriptText // Send client transcript!
+      });
 
-        if (res.data.status === 'completed') {
-          clearInterval(pollInterval);
-          setInterviewFeedback(res.data.feedback);
-          setInterviewAnalyzing(false);
-          toast.success('AI Interview Analysis complete!');
-        } else if (res.data.status === 'failed') {
-          clearInterval(pollInterval);
-          setInterviewAnalyzing(false);
-          toast.error(res.data.message || 'Analysis failed.');
-        }
-      } catch (err) {
-        clearInterval(pollInterval);
+      if (res.data.status === 'completed') {
+        setInterviewFeedback(res.data.feedback);
         setInterviewAnalyzing(false);
-        toast.error('Error connecting to AI Analysis server.');
+        toast.success('AI Interview Analysis complete!');
+      } else {
+        setInterviewAnalyzing(false);
+        toast.error(res.data.message || 'Analysis failed.');
       }
-    }, 5000); 
+    } catch (err) {
+      setInterviewAnalyzing(false);
+      toast.error('Error connecting to AI Analysis server.');
+    }
   };
 
   return (
