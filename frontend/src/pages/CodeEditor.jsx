@@ -251,11 +251,11 @@ int main() {
         videoRef.current.srcObject = stream;
       }
       
-      // Take snapshot every 3 minutes (180000ms)
-      proctorIntervalRef.current = setInterval(captureProctorSnapshot, 180000);
+      // Take snapshot every 10 seconds (10000ms) for real-time testing feedback
+      proctorIntervalRef.current = setInterval(captureProctorSnapshot, 10000);
       
-      // Take an initial snapshot after 5 seconds to ensure video is ready
-      setTimeout(captureProctorSnapshot, 5000);
+      // Take an initial snapshot after 2 seconds to ensure video is ready
+      setTimeout(captureProctorSnapshot, 2000);
     } catch (err) {
       console.error('Webcam access denied', err);
       toast.warning('Webcam access is required for proctoring. Please enable it.');
