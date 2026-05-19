@@ -28,6 +28,10 @@ const CodeEditor = () => {
   const [unlockingHint, setUnlockingHint] = useState(false);
 
   const timerRef = useRef(null);
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+  const proctorStreamRef = useRef(null);
+  const proctorIntervalRef = useRef(null);
   const tabSwitchCount = useRef(0);
 
   // Format date in IST
@@ -144,6 +148,7 @@ int main() {
   // Setup anti-cheat ONLY once
   useEffect(() => {
     setupAntiCheat();
+    setupProctoring();
 
     const handleBeforeUnload = (e) => {
       e.preventDefault();
@@ -153,6 +158,10 @@ int main() {
 
     return () => {
       clearInterval(timerRef.current);
+      clearInterval(proctorIntervalRef.current);
+      if (proctorStreamRef.current) {
+        proctorStreamRef.current.getTracks().forEach(track => track.stop());
+      }
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       document.removeEventListener('contextmenu', handleContextMenu);
       window.removeEventListener('beforeunload', handleBeforeUnload);
@@ -232,6 +241,55 @@ int main() {
   const setupAntiCheat = () => {
     document.addEventListener('visibilitychange', handleVisibilityChange);
     document.addEventListener('contextmenu', handleContextMenu);
+  };
+
+  const setupProctoring = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      proctorStreamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+      
+      // Take snapshot every 3 minutes (180000ms)
+      proctorIntervalRef.current = setInterval(captureProctorSnapshot, 180000);
+      
+      // Take an initial snapshot after 5 seconds to ensure video is ready
+      setTimeout(captureProctorSnapshot, 5000);
+    } catch (err) {
+      console.error('Webcam access denied', err);
+      toast.warning('Webcam access is required for proctoring. Please enable it.');
+    }
+  };
+
+  const captureProctorSnapshot = async () => {
+    if (!videoRef.current || !canvasRef.current || !contestId) return;
+    
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    
+    if (video.videoWidth === 0 || video.videoHeight === 0) return;
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    canvas.toBlob(async (blob) => {
+      if (!blob) return;
+      try {
+        const formData = new FormData();
+        formData.append('contestId', contestId);
+        formData.append('snapshot', blob, 'snapshot.jpeg');
+        
+        await API.post('/proctor/upload', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        // Silently succeed
+      } catch (err) {
+        console.error('Proctor snapshot upload failed', err);
+      }
+    }, 'image/jpeg', 0.8);
   };
 
   const handleSubmit = async () => {
@@ -355,6 +413,10 @@ int main() {
 
   return (
     <div style={styles.page}>
+      {/* Hidden elements for proctoring */}
+      <video ref={videoRef} autoPlay playsInline muted style={{ display: 'none' }} />
+      <canvas ref={canvasRef} style={{ display: 'none' }} />
+      
       <style>{`
         @keyframes spin {
           to { transform: rotate(360deg); }

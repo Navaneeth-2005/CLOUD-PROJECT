@@ -13,6 +13,7 @@ const leaderboardRoutes = require('./routes/leaderboard');
 const analyticsRoutes = require('./routes/analytics');
 const cheatingRoutes = require('./routes/cheating');
 const registrationRoutes = require('./routes/registration');
+const proctorRoutes = require('./routes/proctor');
 
 const User = require('./models/User');
 const Contest = require('./models/Contest');
@@ -22,6 +23,7 @@ const CheatingLog = require('./models/CheatingLog');
 const ContestRegistration = require('./models/ContestRegistration');
 const TestCase = require('./models/TestCase');
 const InterviewSession = require('./models/InterviewSession');
+const ProctorSnapshot = require('./models/ProctorSnapshot');
 const { initSocket } = require('./config/socket');
 
 
@@ -54,6 +56,7 @@ app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/cheating', cheatingRoutes);
 app.use('/api/registration', registrationRoutes);
+app.use('/api/proctor', proctorRoutes);
 
 const PORT = process.env.PORT || 5000;
 

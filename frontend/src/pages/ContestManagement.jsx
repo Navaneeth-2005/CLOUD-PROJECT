@@ -15,6 +15,9 @@ const ContestManagement = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [showQuestionModal, setShowQuestionModal] = useState(false);
   const [showTestCaseModal, setShowTestCaseModal] = useState(false);
+  const [showProctorModal, setShowProctorModal] = useState(false);
+  const [proctorSnaps, setProctorSnaps] = useState([]);
+  const [selectedCandidateName, setSelectedCandidateName] = useState('');
   const [selectedQuestion, setSelectedQuestion] = useState(null);
   const [hoveredRow, setHoveredRow] = useState(null);
   const [questionTestCases, setQuestionTestCases] = useState({});
@@ -121,6 +124,17 @@ const ContestManagement = () => {
       fetchTestCases(questionId);
     } catch (err) {
       toast.error('Failed to delete test case');
+    }
+  };
+
+  const fetchProctorSnaps = async (userId, candidateName) => {
+    try {
+      const res = await API.get(`/proctor/contest/${contestId}/candidate/${userId}`);
+      setProctorSnaps(res.data);
+      setSelectedCandidateName(candidateName);
+      setShowProctorModal(true);
+    } catch (err) {
+      toast.error('Failed to fetch proctor snapshots from AWS S3');
     }
   };
 
@@ -514,7 +528,7 @@ const ContestManagement = () => {
                   <span style={{ width: '150px' }}>Event Type</span>
                   <span style={{ width: '100px', textAlign: 'center' }}>Count</span>
                   <span style={{ width: '100px', textAlign: 'center' }}>Flagged</span>
-                  <span style={{ width: '150px' }}>Details</span>
+                  <span style={{ width: '150px', textAlign: 'center' }}>Actions</span>
                 </div>
                 {cheatingLogs.map((log, i) => (
                   <div
@@ -554,8 +568,13 @@ const ContestManagement = () => {
                         : <span style={styles.safeBadge}>✅ Safe</span>
                       }
                     </div>
-                    <div style={{ width: '150px' }}>
-                      <p style={styles.detailsText}>{log.details || '-'}</p>
+                    <div style={{ width: '150px', display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                      <button
+                        style={{ ...styles.addQuestionBtn, padding: '6px 12px', fontSize: '12px' }}
+                        onClick={() => fetchProctorSnaps(log.userId, log.candidate?.name)}
+                      >
+                        📷 S3 Proctor Snaps
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -689,6 +708,49 @@ const ContestManagement = () => {
                 <button type="submit" style={styles.submitBtn}>Add Question</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Proctoring Snaps Modal */}
+      {showProctorModal && (
+        <div style={styles.overlay} onClick={() => setShowProctorModal(false)}>
+          <div style={{ ...styles.modal, maxWidth: '800px' }} onClick={e => e.stopPropagation()}>
+            <div style={styles.modalHeader}>
+              <div>
+                <h2 style={styles.modalTitle}>S3 Proctor Snapshots</h2>
+                <p style={{ fontSize: '13px', color: '#888', margin: '4px 0 0' }}>
+                  Candidate: <strong>{selectedCandidateName}</strong>
+                </p>
+              </div>
+              <button
+                style={styles.closeBtn}
+                onClick={() => setShowProctorModal(false)}
+                onMouseEnter={e => e.currentTarget.style.background = '#fee2e2'}
+                onMouseLeave={e => e.currentTarget.style.background = '#f5f5f5'}
+              >✕</button>
+            </div>
+
+            <div style={{ padding: '20px', maxHeight: '600px', overflowY: 'auto' }}>
+              {proctorSnaps.length === 0 ? (
+                <div style={styles.empty}>
+                  <div style={styles.emptyIcon}>📷</div>
+                  <h3 style={styles.emptyTitle}>No snapshots available</h3>
+                  <p style={styles.emptySub}>The candidate's webcam snapshots have not been uploaded to AWS S3 yet.</p>
+                </div>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '16px' }}>
+                  {proctorSnaps.map((snap) => (
+                    <div key={snap.id} style={{ background: '#f8f9fa', borderRadius: '8px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
+                      <img src={snap.url} alt="Proctor Snap" style={{ width: '100%', height: '150px', objectFit: 'cover' }} />
+                      <div style={{ padding: '8px', textAlign: 'center', fontSize: '12px', color: '#64748b' }}>
+                        {formatDate(snap.timestamp)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
