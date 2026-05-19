@@ -195,7 +195,7 @@ const generateHeuristicHints = (question) => {
     conceptHint = 'Brute-force checking all triplets takes O(N^3) time. We can optimize this to O(N^2) by sorting the array first, fixing one element, and using a Two-Pointer search for the remaining two elements.';
     edgeCases = '*   Array contains duplicate triplets (must skip identical values to return only unique triplets)\n*   Array has fewer than 3 elements (handle empty bounds)\n*   All elements are positive or all negative (no target sum possible)';
     algorithmTag = 'Two-Pointer Convergence / Sorting';
-    algorithmDetails = '1. Sort the array first to handle duplicates and enable two-pointers.\n2. Iterate through the array with index `i`. If `i > 0` and the current number is the same as the previous one, skip it to avoid duplicate triplets.\n3. Place pointer `left` at `i + 1` and `right` at the end of the array.\n4. While `left < right`, compute the sum. If the sum is zero, add the triplet `[nums[i], nums[left], nums[right]]` to your result, then increment `left` and decrement `right` while skipping duplicate elements. If the sum is less than zero, increment `left`. If the sum is greater than zero, decrement `right`.';
+    algorithmDetails = 'Use Sorting followed by the Two-Pointer technique to find triplets without duplicates.';
   } else if (
     fullText.includes('two sum') ||
     fullText.includes('twosum') ||
@@ -209,7 +209,7 @@ const generateHeuristicHints = (question) => {
     conceptHint = 'You can optimize the naive O(N^2) brute force by trading memory for speed. Use a key-value store to look up precalculated values or complements in constant time O(1), or sort the array and use convergence pointers.';
     edgeCases = '*   Multiple valid pairs exist (ensure you return the correct matching indices)\n*   No duplicate or matching pair exists (gracefully handle null or empty bounds)\n*   Using the same index/element twice (e.g., target is 6, array has [3] - must NOT return [0, 0])';
     algorithmTag = 'Two-Pointer / HashMap Lookup';
-    algorithmDetails = '1. HashMap Approach (Optimal - O(N) Time, O(N) Space):\n   Create a Hash Map. For each element `num` at index `i`, check if `target - num` already exists in the map. If yes, return `[map.get(target - num), i]`. Otherwise, insert `num` with value `i` into the map.\n\n2. Two-Pointer Approach (O(N log N) Time, O(1) Space):\n   Sort the array first. Place one pointer `left` at the beginning and `right` at the end. Check their sum. If `sum == target`, return. If `sum < target`, increment `left`. If `sum > target`, decrement `right`.';
+    algorithmDetails = 'Use a HashMap for O(N) time complexity, or sort the array and use Two-Pointers for O(1) space complexity.';
   } else if (
     fullText.includes('shortest') ||
     fullText.includes('maze') ||
@@ -223,7 +223,7 @@ const generateHeuristicHints = (question) => {
     conceptHint = 'Represent this problem as a state graph. Each modification or move corresponds to a directed edge between nodes. Explore states level by level.';
     edgeCases = '*   Graph has multiple disconnected components\n*   Graph contains cycles (ensure you keep track of visited nodes to avoid infinite loops)\n*   Starting state is already the target state';
     algorithmTag = 'Breadth-First Search (BFS) / Depth-First Search (DFS)';
-    algorithmDetails = 'Use BFS with a Queue if you want to find the shortest path in an unweighted graph. Use DFS with a Stack (or Recursion) for exhaustive path finding.';
+    algorithmDetails = 'Use Breadth-First Search (BFS) for shortest unweighted paths, or Depth-First Search (DFS) for exhaustive traversal.';
   } else if (
     fullText.includes('subsequence') ||
     fullText.includes('subset') ||
@@ -237,7 +237,7 @@ const generateHeuristicHints = (question) => {
     conceptHint = 'This problem can be broken down into overlapping subproblems. Try to define a state relation `dp[i]` representing the optimal choice up to index `i`.';
     edgeCases = '*   Input elements are negative\n*   No subset/partition is possible (handle failure boundaries)\n*   Large index values where simple recursion would time out (O(2^N))';
     algorithmTag = 'Dynamic Programming (DP)';
-    algorithmDetails = 'Create a table (1D or 2D array) to store intermediate results, or use recursion with memoization (top-down) to optimize time complexity to O(N) or O(N*W).';
+    algorithmDetails = 'Use Dynamic Programming with memoization or tabulation to cache overlapping subproblem results.';
   } else if (
     fullText.includes('interval') ||
     fullText.includes('overlap') ||
@@ -248,7 +248,7 @@ const generateHeuristicHints = (question) => {
     conceptHint = 'Consider sorting the inputs first. Often, sorting by start time or end time makes the optimal choice straightforward.';
     edgeCases = '*   Completely overlapping intervals (e.g., [1, 5] and [2, 3])\n*   Intervals with 0 duration (e.g., [2, 2])\n*   No overlaps exist';
     algorithmTag = 'Greedy / Sorting';
-    algorithmDetails = 'Sort the intervals/elements by their end times. Iterate through them and greedily select the next non-overlapping element.';
+    algorithmDetails = 'Use a Greedy approach by sorting the inputs optimally (e.g., by end times) and picking the best local choice.';
   } else if (
     fullText.includes('duplicate') ||
     fullText.includes('frequency') ||
@@ -257,7 +257,7 @@ const generateHeuristicHints = (question) => {
     conceptHint = 'You can trade memory for speed. Use a key-value store to look up precalculated values or frequencies in constant time O(1).';
     edgeCases = '*   No duplicate or matching pair exists\n*   The same element cannot be reused (track index references)\n*   Large keys causing hash collisions';
     algorithmTag = 'HashMap / HashSet';
-    algorithmDetails = 'Store the frequency or index of elements in a HashMap. Alternatively, sort the input array and use two pointers (left and right) moving toward each other.';
+    algorithmDetails = 'Use a HashMap or HashSet to store and retrieve elements in constant O(1) time.';
   }
 
   return {
