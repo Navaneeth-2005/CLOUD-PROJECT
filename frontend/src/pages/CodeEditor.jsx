@@ -245,7 +245,12 @@ int main() {
 
   const setupProctoring = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        }
+      });
       proctorStreamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
@@ -280,9 +285,9 @@ int main() {
     const video = videoRef.current;
     const canvas = canvasRef.current;
     
-    // Fallback to standard webcam dimensions if browser throttles videoWidth/videoHeight to 0 due to invisibility
-    const width = video.videoWidth || 640;
-    const height = video.videoHeight || 480;
+    // Fallback to high-definition webcam dimensions if browser throttles videoWidth/videoHeight to 0 due to invisibility
+    const width = video.videoWidth || 1280;
+    const height = video.videoHeight || 720;
 
     console.log(`[Proctor] Canvas resolution: ${width}x${height}`);
     canvas.width = width;
