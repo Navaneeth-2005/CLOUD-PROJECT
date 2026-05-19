@@ -26,12 +26,7 @@ const CodeEditor = () => {
   const [loadingHints, setLoadingHints] = useState(false);
   const [showUnlockModal, setShowUnlockModal] = useState(false);
   const [unlockingHint, setUnlockingHint] = useState(false);
-  const [isRecording, setIsRecording] = useState(false);
-  const [interviewJobName, setInterviewJobName] = useState(null);
-  const [interviewFeedback, setInterviewFeedback] = useState(null);
-  const [interviewAnalyzing, setInterviewAnalyzing] = useState(false);
-  const mediaRecorderRef = useRef(null);
-  const audioChunksRef = useRef([]);
+
   const timerRef = useRef(null);
   const tabSwitchCount = useRef(0);
 
@@ -312,90 +307,7 @@ int main() {
     }
   };
 
-  const startInterviewRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-      mediaRecorderRef.current = mediaRecorder;
-      audioChunksRef.current = [];
 
-      mediaRecorder.ondataavailable = (e) => {
-        if (e.data.size > 0) {
-          audioChunksRef.current.push(e.data);
-        }
-      };
-
-      mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        await submitInterviewAudio(audioBlob);
-      };
-
-      mediaRecorder.start();
-      setIsRecording(true);
-      setInterviewFeedback(null);
-      toast.info('Recording started! Explain your thought process out loud.');
-    } catch (err) {
-      console.error('Mic access denied', err);
-      toast.error('Microphone access denied. Please allow mic access to use the mock interviewer.');
-    }
-  };
-
-  const stopInterviewRecording = () => {
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
-      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
-      setIsRecording(false);
-      setInterviewAnalyzing(true);
-      setActivePanel('interview');
-    }
-  };
-
-  const submitInterviewAudio = async (audioBlob) => {
-    try {
-      const formData = new FormData();
-      formData.append('audio', audioBlob, 'interview.webm');
-
-      const res = await API.post('/interviews/start', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
-
-      const jobName = res.data.jobName;
-      setInterviewJobName(jobName);
-      pollInterviewAnalysis(jobName);
-    } catch (err) {
-      console.error('Audio upload failed', err);
-      toast.error('Failed to upload interview audio.');
-      setInterviewAnalyzing(false);
-    }
-  };
-
-  const pollInterviewAnalysis = (jobName) => {
-    const pollInterval = setInterval(async () => {
-      try {
-        const res = await API.post('/interviews/analyze', {
-          jobName,
-          code: code,
-          questionTitle: question?.title || '',
-          questionDesc: question?.description || ''
-        });
-
-        if (res.data.status === 'completed') {
-          clearInterval(pollInterval);
-          setInterviewFeedback(res.data.feedback);
-          setInterviewAnalyzing(false);
-          toast.success('AI Interview Analysis complete!');
-        } else if (res.data.status === 'failed') {
-          clearInterval(pollInterval);
-          setInterviewAnalyzing(false);
-          toast.error(res.data.message || 'Analysis failed.');
-        }
-      } catch (err) {
-        clearInterval(pollInterval);
-        setInterviewAnalyzing(false);
-        toast.error('Error connecting to AI Analysis server.');
-      }
-    }, 5000); // Poll every 5 seconds since AWS Transcribe takes time
-  };
 
   useEffect(() => {
     if (activePanel === 'hints') {
@@ -556,7 +468,7 @@ int main() {
 
           {/* Panel Tabs */}
           <div style={styles.panelTabs}>
-            {['problem', 'hints', 'interview', 'result'].map(panel => (
+            {['problem', 'hints', 'result'].map(panel => (
               <button
                 key={panel}
                 style={{
@@ -568,7 +480,7 @@ int main() {
                 }}
                 onClick={() => setActivePanel(panel)}
               >
-                {panel === 'problem' ? '📋 Problem' : panel === 'hints' ? '✨ Ask AI Hint' : panel === 'interview' ? '🎙️ AI Interview' : '📊 Result'}
+                {panel === 'problem' ? '📋 Problem' : panel === 'hints' ? '✨ Ask AI Hint' : '📊 Result'}
               </button>
             ))}
           </div>
@@ -751,71 +663,7 @@ int main() {
             </div>
           )}
 
-          {/* Interview Panel */}
-          {activePanel === 'interview' && (
-            <div style={styles.hintsPanel}>
-              <div style={{ textAlign: 'center', marginBottom: 20 }}>
-                <h3 style={{ color: '#4fc3f7', marginBottom: 10 }}>🎙️ AI Mock Interviewer</h3>
-                <p style={{ color: '#aaa', fontSize: 13, marginBottom: 20 }}>
-                  Practice for FAANG! Think out loud and explain your logic while coding. The AI will evaluate your communication and reasoning.
-                </p>
-                
-                {!isRecording && !interviewAnalyzing && (
-                  <button
-                    style={{ ...styles.submitBtn, background: 'linear-gradient(135deg, #10b981, #059669)', width: 'auto', padding: '10px 24px' }}
-                    onClick={startInterviewRecording}
-                  >
-                    🎤 Start Recording
-                  </button>
-                )}
 
-                {isRecording && (
-                  <button
-                    style={{ ...styles.submitBtn, background: 'linear-gradient(135deg, #ef4444, #dc2626)', width: 'auto', padding: '10px 24px', animation: 'pulse 1.5s infinite' }}
-                    onClick={stopInterviewRecording}
-                  >
-                    ⏹️ Stop & Analyze
-                  </button>
-                )}
-                
-                {interviewAnalyzing && (
-                  <div style={{ ...styles.noResult, animation: 'pulse 1.5s infinite', marginTop: 0 }}>
-                    <div style={{ ...styles.noResultIcon, fontSize: 30 }}>🎧</div>
-                    <p style={{ ...styles.noResultText, color: '#f59e0b', fontWeight: 600 }}>
-                      AWS Transcribe & Gemini AI are analyzing your audio...
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {interviewFeedback && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 16, animation: 'fadeIn 0.3s ease-out' }}>
-                  <div style={{ display: 'flex', gap: 16 }}>
-                    <div style={{ ...styles.hintCard, flex: 1, textAlign: 'center', background: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.2)' }}>
-                      <h4 style={{ ...styles.sectionLabel, color: '#10b981', marginBottom: 6 }}>Communication</h4>
-                      <div style={{ fontSize: 24, fontWeight: 800, color: '#10b981' }}>{interviewFeedback.communicationScore}/10</div>
-                    </div>
-                    <div style={{ ...styles.hintCard, flex: 1, textAlign: 'center', background: 'rgba(139,92,246,0.05)', border: '1px solid rgba(139,92,246,0.2)' }}>
-                      <h4 style={{ ...styles.sectionLabel, color: '#8b5cf6', marginBottom: 6 }}>Technical Logic</h4>
-                      <div style={{ fontSize: 24, fontWeight: 800, color: '#8b5cf6' }}>{interviewFeedback.technicalScore}/10</div>
-                    </div>
-                  </div>
-                  
-                  <div style={styles.hintCard}>
-                    <h4 style={{ ...styles.sectionLabel, color: '#4fc3f7', marginBottom: 6 }}>🧠 AI Feedback</h4>
-                    <p style={{ ...styles.problemDesc, fontSize: 13.5 }}>{interviewFeedback.review}</p>
-                  </div>
-                  
-                  <div style={styles.edgeCasesCard}>
-                    <h4 style={{ ...styles.sectionLabel, color: '#f59e0b', marginBottom: 6 }}>📝 What you said (AWS Transcribe)</h4>
-                    <p style={{ ...styles.problemDesc, fontSize: 12, color: '#888', fontStyle: 'italic' }}>
-                      "{interviewFeedback.transcript}"
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
 
           {/* Result Panel */}
           {activePanel === 'result' && (

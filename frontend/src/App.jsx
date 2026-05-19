@@ -12,6 +12,7 @@ import CodeEditor from './pages/CodeEditor';
 import Leaderboard from './pages/Leaderboard';
 import ContestManagement from './pages/ContestManagement';
 import InterviewArena from './pages/InterviewArena';
+import MockInterview from './pages/MockInterview';
 
 const ProtectedRoute = ({ children, role }) => {
   const { user } = useAuth();
@@ -41,6 +42,11 @@ const AppRoutes = () => {
         <Route path="/contest/:contestId/question/:questionId" element={
           <ProtectedRoute role="candidate">
             <CodeEditor />
+          </ProtectedRoute>
+        } />
+        <Route path="/candidate/mock-interview" element={
+          <ProtectedRoute role="candidate">
+            <MockInterview />
           </ProtectedRoute>
         } />
         <Route path="/leaderboard/:contestId" element={

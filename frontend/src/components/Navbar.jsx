@@ -43,6 +43,19 @@ const Navbar = () => {
                 onMouseEnter={() => setHovered('dash')}
                 onMouseLeave={() => setHovered('')}
               >Dashboard</Link>
+              
+              {user.role === 'candidate' && (
+                <Link
+                  to="/candidate/mock-interview"
+                  style={{
+                    ...s.navLink,
+                    background: hovered === 'mock' ? 'rgba(16,185,129,0.15)' : 'transparent',
+                    color: hovered === 'mock' ? '#10b981' : '#94a3b8',
+                  }}
+                  onMouseEnter={() => setHovered('mock')}
+                  onMouseLeave={() => setHovered('')}
+                >🎙️ Mock Interview</Link>
+              )}
 
               <button
                 onClick={handleLogout}
