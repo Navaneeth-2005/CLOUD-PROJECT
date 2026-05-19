@@ -685,6 +685,7 @@ const ContestManagement = () => {
                       border: '1px solid #cbd5e1',
                       fontSize: '14px',
                       outline: 'none',
+                      color: '#0f172a',
                       background: 'white',
                       boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.05)'
                     }}
