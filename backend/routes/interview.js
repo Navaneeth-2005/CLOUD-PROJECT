@@ -1,166 +1,149 @@
 const express = require('express');
 const router = express.Router();
+const multer = require('multer');
+const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
+const { TranscribeClient, StartTranscriptionJobCommand, GetTranscriptionJobCommand } = require('@aws-sdk/client-transcribe');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
+const axios = require('axios');
+const authMiddleware = require('../middleware/auth');
 const crypto = require('crypto');
-const InterviewSession = require('../models/InterviewSession');
-const User = require('../models/User');
-const { authMiddleware, roleMiddleware } = require('../middleware/auth');
-const { sendInterviewInvitation } = require('../config/email');
 
-// 1. Create a new scheduled interview session (Company / Admin only)
-router.post('/create', authMiddleware, roleMiddleware('company', 'admin'), async (req, res) => {
-  try {
-    const { title, candidateName, candidateEmail, scheduledStart, scheduledEnd } = req.body;
+// Setup Multer to store audio files in memory
+const upload = multer({ storage: multer.memoryStorage() });
 
-    if (!title || !candidateName || !candidateEmail || !scheduledStart || !scheduledEnd) {
-      return res.status(400).json({ message: 'All fields are required' });
-    }
-
-    // Generate secure unique join token
-    const joinToken = crypto.randomUUID();
-
-    const session = await InterviewSession.create({
-      title,
-      companyId: req.user.id,
-      candidateName,
-      candidateEmail,
-      scheduledStart: new Date(scheduledStart),
-      scheduledEnd: new Date(scheduledEnd),
-      joinToken
-    });
-
-    // Generate the live join link
-    const frontendURL = process.env.FRONTEND_URL || 'http://localhost:5173';
-    const joinUrl = `${frontendURL}/interview/${joinToken}`;
-
-    // Send beautiful email invitation to the candidate
-    try {
-      const interviewer = await User.findByPk(req.user.id);
-      await sendInterviewInvitation(
-        candidateEmail,
-        candidateName,
-        interviewer.name,
-        title,
-        new Date(scheduledStart).toLocaleString(),
-        joinUrl
-      );
-    } catch (emailErr) {
-      console.error('Failed to send email invite:', emailErr.message);
-    }
-
-    res.status(201).json({
-      message: 'Interview session created and invitation sent successfully!',
-      session,
-      joinUrl
-    });
-
-  } catch (err) {
-    res.status(500).json({ message: 'Server error', error: err.message });
+// Initialize AWS Clients
+const s3Client = new S3Client({
+  region: process.env.AWS_REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
   }
 });
 
-// 2. Get list of scheduled interviews for active company interviewer
-router.get('/list', authMiddleware, roleMiddleware('company', 'admin'), async (req, res) => {
-  try {
-    const sessions = await InterviewSession.findAll({
-      where: { companyId: req.user.id },
-      order: [['scheduledStart', 'ASC']]
-    });
-
-    // Filter out sessions that ended or were completed more than 6 hours ago
-    const now = new Date();
-    const filteredSessions = sessions.filter(s => {
-      if (s.status === 'completed') {
-        const completedTime = new Date(s.updatedAt || s.scheduledEnd);
-        const diffHours = (now - completedTime) / (1000 * 60 * 60);
-        return diffHours <= 6;
-      }
-      if (new Date(s.scheduledEnd) < now) {
-         const diffHours = (now - new Date(s.scheduledEnd)) / (1000 * 60 * 60);
-         if (diffHours > 6) return false;
-      }
-      return true;
-    });
-
-    res.json(filteredSessions);
-  } catch (err) {
-    res.status(500).json({ message: 'Server error', error: err.message });
+const transcribeClient = new TranscribeClient({
+  region: process.env.AWS_REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
   }
 });
 
-// 3. Get session metadata using the unique join token (Anonymous allowed to allow candidates to enter)
-router.get('/session/:token', async (req, res) => {
+const s3Bucket = process.env.S3_BUCKET_NAME;
+
+// Route 1: Upload Audio & Start Transcription
+router.post('/start', authMiddleware, upload.single('audio'), async (req, res) => {
   try {
-    const session = await InterviewSession.findOne({
-      where: { joinToken: req.params.token },
-      include: [{ model: User, as: 'interviewer', attributes: ['name', 'email'] }]
+    if (!req.file) return res.status(400).json({ message: 'No audio file provided' });
+
+    // 1. Upload audio to S3
+    const fileKey = `interviews/user_${req.user.id}_${Date.now()}.webm`;
+    
+    await s3Client.send(new PutObjectCommand({
+      Bucket: s3Bucket,
+      Key: fileKey,
+      Body: req.file.buffer,
+      ContentType: req.file.mimetype || 'audio/webm'
+    }));
+
+    const mediaUri = `s3://${s3Bucket}/${fileKey}`;
+    const jobName = `CodeStorm_Interview_${crypto.randomBytes(4).toString('hex')}_${Date.now()}`;
+
+    // 2. Start AWS Transcribe Job
+    const startJobCmd = new StartTranscriptionJobCommand({
+      TranscriptionJobName: jobName,
+      LanguageCode: 'en-US',
+      MediaFormat: 'webm',
+      Media: { MediaFileUri: mediaUri }
+      // Omitting OutputBucketName forces Transcribe to return a secure pre-signed URI
     });
 
-    if (!session) {
-      return res.status(404).json({ message: 'Interview session not found or invalid link' });
-    }
+    await transcribeClient.send(startJobCmd);
 
-    res.json(session);
-  } catch (err) {
-    res.status(500).json({ message: 'Server error', error: err.message });
+    res.json({ success: true, jobName, message: 'Transcription started successfully' });
+  } catch (error) {
+    console.error('Error starting transcription:', error);
+    res.status(500).json({ message: 'Failed to start AI interview analysis', error: error.message });
   }
 });
 
-// 4. Update status of the interview session (Company / Admin only)
-router.post('/session/:token/status', authMiddleware, roleMiddleware('company', 'admin'), async (req, res) => {
+// Route 2: Poll Transcription Status & Generate AI Feedback
+router.post('/analyze', authMiddleware, async (req, res) => {
   try {
-    const { status } = req.body;
+    const { jobName, code, questionTitle, questionDesc } = req.body;
 
-    if (!['scheduled', 'active', 'completed'].includes(status)) {
-      return res.status(400).json({ message: 'Invalid status' });
+    // 1. Check Transcribe Job Status
+    const getJobCmd = new GetTranscriptionJobCommand({ TranscriptionJobName: jobName });
+    const jobData = await transcribeClient.send(getJobCmd);
+    
+    const status = jobData.TranscriptionJob.TranscriptionJobStatus;
+
+    if (status === 'IN_PROGRESS' || status === 'QUEUED') {
+      return res.json({ status: 'processing', message: 'Analyzing your audio...' });
     }
 
-    const session = await InterviewSession.findOne({
-      where: { joinToken: req.params.token }
+    if (status === 'FAILED') {
+      return res.status(500).json({ status: 'failed', message: 'AWS Transcribe failed to process the audio.' });
+    }
+
+    // 2. Fetch Transcript Text
+    const transcriptUri = jobData.TranscriptionJob.Transcript.TranscriptFileUri;
+    const response = await axios.get(transcriptUri);
+    const transcriptText = response.data.results.transcripts[0]?.transcript || '';
+
+    if (!transcriptText) {
+      return res.json({ status: 'completed', feedback: { 
+        communicationScore: 0, 
+        technicalScore: 0, 
+        review: "We couldn't hear any clear speech in the audio. Please ensure your microphone is working.",
+        transcript: ""
+      }});
+    }
+
+    // 3. Send to Gemini 2.0 for Mock Interview Feedback
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+
+    const prompt = `You are an expert FAANG Senior Software Engineer conducting a mock technical interview.
+The candidate has just explained their thought process out loud while solving a coding problem.
+
+Problem Title: ${questionTitle}
+Problem Description: ${questionDesc}
+
+Candidate's Code Submission:
+\`\`\`
+${code}
+\`\`\`
+
+Candidate's Audio Transcript (What they said out loud):
+"${transcriptText}"
+
+Provide a structured, JSON-only feedback review with the following strict format:
+{
+  "communicationScore": <Number from 1-10 evaluating their clarity and ability to explain concepts verbally>,
+  "technicalScore": <Number from 1-10 evaluating if their verbal logic aligns well with their code and the problem>,
+  "review": "<Max 3 short sentences of constructive feedback. Mention one thing they explained well and one area to improve.>",
+  "transcript": "${transcriptText.replace(/"/g, "'")}"
+}
+
+Respond strictly with valid JSON. Do not include markdown code blocks around the JSON.`;
+
+    const aiResult = await model.generateContent(prompt);
+    let aiResponseText = aiResult.response.text().trim();
+    
+    if (aiResponseText.startsWith('\`\`\`json')) {
+      aiResponseText = aiResponseText.replace(/^\`\`\`json/, '').replace(/\`\`\`$/, '').trim();
+    }
+    
+    const feedbackData = JSON.parse(aiResponseText);
+
+    res.json({
+      status: 'completed',
+      feedback: feedbackData
     });
 
-    if (!session) {
-      return res.status(404).json({ message: 'Session not found' });
-    }
-
-    if (session.companyId !== req.user.id) {
-      return res.status(403).json({ message: 'Access denied: You are not the owner of this session' });
-    }
-
-    await session.update({ status });
-    res.json({ message: `Session status updated to ${status}`, session });
-  } catch (err) {
-    res.status(500).json({ message: 'Server error', error: err.message });
-  }
-});
-
-// 5. Extend interview session end time (Company / Admin only)
-router.post('/session/:token/extend', authMiddleware, roleMiddleware('company', 'admin'), async (req, res) => {
-  try {
-    const { minutes } = req.body;
-
-    if (!minutes || isNaN(minutes) || minutes <= 0) {
-      return res.status(400).json({ message: 'Valid extension minutes required' });
-    }
-
-    const session = await InterviewSession.findOne({
-      where: { joinToken: req.params.token }
-    });
-
-    if (!session) {
-      return res.status(404).json({ message: 'Session not found' });
-    }
-
-    if (session.companyId !== req.user.id) {
-      return res.status(403).json({ message: 'Access denied: You are not the owner of this session' });
-    }
-
-    const currentEnd = new Date(session.scheduledEnd);
-    const newEnd = new Date(currentEnd.getTime() + minutes * 60 * 1000);
-
-    await session.update({ scheduledEnd: newEnd });
-    res.json({ message: `Session extended successfully by ${minutes} minutes`, session });
-  } catch (err) {
-    res.status(500).json({ message: 'Server error', error: err.message });
+  } catch (error) {
+    console.error('Error analyzing interview:', error);
+    res.status(500).json({ message: 'Failed to generate interview feedback', error: error.message });
   }
 });
 
