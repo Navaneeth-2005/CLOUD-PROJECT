@@ -14,6 +14,7 @@ const analyticsRoutes = require('./routes/analytics');
 const cheatingRoutes = require('./routes/cheating');
 const registrationRoutes = require('./routes/registration');
 const proctorRoutes = require('./routes/proctor');
+const interviewRoutes = require('./routes/interview');
 
 const User = require('./models/User');
 const Contest = require('./models/Contest');
@@ -57,13 +58,14 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/cheating', cheatingRoutes);
 app.use('/api/registration', registrationRoutes);
 app.use('/api/proctor', proctorRoutes);
+app.use('/api/interviews', interviewRoutes);
 
 const PORT = process.env.PORT || 5000;
 
 sequelize.authenticate()
   .then(() => {
     console.log('✅ MySQL connected!');
-    return sequelize.sync({ alter: false });
+    return sequelize.sync({ alter: true });
   })
   .then(() => {
     console.log('✅ Tables synced!');
