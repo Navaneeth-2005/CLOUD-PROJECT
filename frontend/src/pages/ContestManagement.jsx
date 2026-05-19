@@ -18,6 +18,8 @@ const ContestManagement = () => {
   const [showProctorModal, setShowProctorModal] = useState(false);
   const [proctorSnaps, setProctorSnaps] = useState([]);
   const [selectedCandidateName, setSelectedCandidateName] = useState('');
+  const [proctorData, setProctorData] = useState([]);
+  const [proctorLoading, setProctorLoading] = useState(false);
   const [selectedQuestion, setSelectedQuestion] = useState(null);
   const [hoveredRow, setHoveredRow] = useState(null);
   const [questionTestCases, setQuestionTestCases] = useState({});
@@ -41,6 +43,18 @@ const ContestManagement = () => {
   useEffect(() => {
     fetchAll();
   }, []);
+
+  const fetchProctorData = async () => {
+    setProctorLoading(true);
+    try {
+      const res = await API.get(`/proctor/contest/${contestId}`);
+      setProctorData(res.data);
+    } catch (err) {
+      toast.error('Failed to load proctoring data from AWS Rekognition');
+    } finally {
+      setProctorLoading(false);
+    }
+  };
 
   const formatDate = (dateStr) => {
     return new Date(dateStr).toLocaleString('en-IN', {
@@ -152,7 +166,8 @@ const ContestManagement = () => {
     { id: 'overview', label: '📊 Overview' },
     { id: 'questions', label: '❓ Questions' },
     { id: 'submissions', label: '📤 Submissions' },
-    { id: 'cheating', label: '🚨 Cheating Logs' }
+    { id: 'cheating', label: '🚨 Cheating Logs' },
+    { id: 'proctoring', label: '📷 Proctoring (Rekognition)' }
   ];
 
   return (
@@ -251,7 +266,10 @@ const ContestManagement = () => {
                 boxShadow: activeTab === tab.id ? '0 4px 15px rgba(79,195,247,0.4)' : 'none',
                 border: activeTab === tab.id ? 'none' : '1px solid #e0e0e0'
               }}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => {
+                setActiveTab(tab.id);
+                if (tab.id === 'proctoring') fetchProctorData();
+              }}
             >
               {tab.label}
             </button>
@@ -584,7 +602,75 @@ const ContestManagement = () => {
         )}
       </div>
 
+        {/* Proctoring Tab — Amazon Rekognition */}
+        {activeTab === 'proctoring' && (
+          <div style={{ animation: 'fadeIn 0.3s ease-out', padding: '0 40px 40px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '18px', color: '#1e293b' }}>📷 Automated Proctoring</h3>
+                <p style={{ margin: '4px 0 0', color: '#64748b', fontSize: '13px' }}>
+                  Webcam snapshots analysed by <strong>Amazon Rekognition</strong> for real-time face detection
+                </p>
+              </div>
+              <button style={{ ...styles.addQuestionBtn }} onClick={fetchProctorData}>🔄 Refresh</button>
+            </div>
+
+            {proctorLoading ? (
+              <div style={{ textAlign: 'center', padding: '60px', color: '#64748b' }}>
+                <p style={{ fontSize: '24px' }}>⏳</p>
+                <p>Loading from AWS S3 + Rekognition...</p>
+              </div>
+            ) : proctorData.length === 0 ? (
+              <div style={styles.empty}>
+                <div style={styles.emptyIcon}>📷</div>
+                <h3 style={styles.emptyTitle}>No snapshots yet</h3>
+                <p style={styles.emptySub}>Once a candidate joins a contest, the browser requests webcam access and silently uploads a snapshot every 3 minutes to Amazon S3, then Amazon Rekognition analyses each photo for face count.</p>
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '20px' }}>
+                {proctorData.map((snap) => (
+                  <div key={snap.id} style={{
+                    background: 'white', borderRadius: '14px', overflow: 'hidden',
+                    boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+                    border: snap.suspiciousActivity ? '2px solid #ef4444' : '1px solid #e2e8f0'
+                  }}>
+                    <div style={{ position: 'relative' }}>
+                      <img src={snap.url} alt="Proctor Snapshot" style={{ width: '100%', height: '160px', objectFit: 'cover', display: 'block' }} />
+                      {snap.suspiciousActivity && (
+                        <div style={{ position: 'absolute', top: '8px', right: '8px', background: '#ef4444', color: 'white', borderRadius: '6px', padding: '3px 8px', fontSize: '11px', fontWeight: '700' }}>
+                          🚨 ALERT
+                        </div>
+                      )}
+                      <div style={{ position: 'absolute', top: '8px', left: '8px', background: 'rgba(0,0,0,0.65)', color: 'white', borderRadius: '6px', padding: '3px 8px', fontSize: '11px' }}>
+                        👤 {snap.faceCount} face{snap.faceCount !== 1 ? 's' : ''}
+                      </div>
+                    </div>
+                    <div style={{ padding: '12px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                        <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'linear-gradient(135deg, #a78bfa, #7c3aed)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '12px', fontWeight: '700', flexShrink: 0 }}>
+                          {snap.candidate?.name?.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <p style={{ margin: 0, fontSize: '13px', fontWeight: '600', color: '#1e293b' }}>{snap.candidate?.name}</p>
+                          <p style={{ margin: 0, fontSize: '11px', color: '#94a3b8' }}>{snap.candidate?.email}</p>
+                        </div>
+                      </div>
+                      {snap.rekognitionAlert && (
+                        <div style={{ background: '#fff5f5', border: '1px solid #fecaca', borderRadius: '6px', padding: '6px 8px', fontSize: '12px', color: '#dc2626', marginBottom: '6px' }}>
+                          ⚠️ {snap.rekognitionAlert}
+                        </div>
+                      )}
+                      <p style={{ margin: 0, fontSize: '11px', color: '#94a3b8' }}>🕐 {formatDate(snap.timestamp)}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
       {/* Add Question Modal */}
+
       {showQuestionModal && (
         <div style={styles.overlay} onClick={() => setShowQuestionModal(false)}>
           <div style={styles.modal} onClick={e => e.stopPropagation()}>

@@ -23,14 +23,26 @@ const ProctorSnapshot = sequelize.define('ProctorSnapshot', {
     type: DataTypes.STRING,
     allowNull: false
   },
+  faceCount: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0
+  },
+  suspiciousActivity: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  },
+  rekognitionAlert: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
   timestamp: {
     type: DataTypes.DATE,
     defaultValue: DataTypes.NOW
   }
 });
 
-User.hasMany(ProctorSnapshot, { foreignKey: 'userId' });
-ProctorSnapshot.belongsTo(User, { foreignKey: 'userId' });
+User.hasMany(ProctorSnapshot, { foreignKey: 'userId', as: 'proctorSnapshots' });
+ProctorSnapshot.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 
 Contest.hasMany(ProctorSnapshot, { foreignKey: 'contestId' });
 ProctorSnapshot.belongsTo(Contest, { foreignKey: 'contestId' });
