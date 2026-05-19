@@ -52,7 +52,7 @@ const ContestManagement = () => {
       const res = await API.get(`/proctor/contest/${contestId}`);
       setProctorData(res.data);
     } catch (err) {
-      toast.error('Failed to load proctoring data from AWS Rekognition');
+      toast.error(`Failed to load proctoring data: ${err.response?.data?.message || err.message}`);
     } finally {
       setProctorLoading(false);
     }
