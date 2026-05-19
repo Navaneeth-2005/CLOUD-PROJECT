@@ -54,7 +54,7 @@ router.post('/upload', authMiddleware, upload.single('snapshot'), async (req, re
     try {
       const detectCmd = new DetectFacesCommand({
         Image: { Bytes: req.file.buffer },
-        Attributes: ['DEFAULT']
+        Attributes: ['ALL']
       });
       const rekResult = await rekognitionClient.send(detectCmd);
       faceCount = rekResult.FaceDetails?.length || 0;
@@ -65,8 +65,22 @@ router.post('/upload', authMiddleware, upload.single('snapshot'), async (req, re
       } else if (faceCount > 1) {
         suspiciousActivity = true;
         rekognitionAlert = `Multiple faces detected (${faceCount}) — possible external help.`;
+      } else {
+        // Exactly 1 face. Analyze HeadPose (Yaw and Pitch) to detect looking away!
+        const primaryFace = rekResult.FaceDetails[0];
+        if (primaryFace.Pose) {
+          const { Yaw, Pitch } = primaryFace.Pose;
+          // Yaw: left/right rotation. Pitch: up/down rotation.
+          if (Math.abs(Yaw) > 35) {
+            suspiciousActivity = true;
+            rekognitionAlert = `Candidate is looking sideways (turned head by ${Math.round(Yaw)}°).`;
+          } else if (Math.abs(Pitch) > 30) {
+            suspiciousActivity = true;
+            rekognitionAlert = `Candidate is looking far up or down (Pitch angle: ${Math.round(Pitch)}°).`;
+          }
+        }
       }
-      console.log(`Rekognition: contest_${contestId} user_${req.user.id} -> ${faceCount} face(s) detected`);
+      console.log(`Rekognition: contest_${contestId} user_${req.user.id} -> ${faceCount} face(s) detected. Suspicious: ${suspiciousActivity}`);
     } catch (rekErr) {
       console.warn('Rekognition face detection skipped:', rekErr.message);
     }
