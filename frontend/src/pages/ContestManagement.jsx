@@ -20,6 +20,8 @@ const ContestManagement = () => {
   const [selectedCandidateName, setSelectedCandidateName] = useState('');
   const [proctorData, setProctorData] = useState([]);
   const [proctorLoading, setProctorLoading] = useState(false);
+  const [proctorSearch, setProctorSearch] = useState('');
+  const [showOnlyAlerts, setShowOnlyAlerts] = useState(false);
   const [selectedQuestion, setSelectedQuestion] = useState(null);
   const [hoveredRow, setHoveredRow] = useState(null);
   const [questionTestCases, setQuestionTestCases] = useState({});
@@ -605,67 +607,208 @@ const ContestManagement = () => {
         {/* Proctoring Tab — Amazon Rekognition */}
         {activeTab === 'proctoring' && (
           <div style={{ animation: 'fadeIn 0.3s ease-out', padding: '0 40px 40px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            {/* Header section */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
               <div>
-                <h3 style={{ margin: 0, fontSize: '18px', color: '#1e293b' }}>📷 Automated Proctoring</h3>
-                <p style={{ margin: '4px 0 0', color: '#64748b', fontSize: '13px' }}>
-                  Webcam snapshots analysed by <strong>Amazon Rekognition</strong> for real-time face detection
+                <h3 style={{ margin: 0, fontSize: '20px', fontWeight: '700', color: '#0f172a' }}>📷 Automated Proctoring Dashboard</h3>
+                <p style={{ margin: '6px 0 0', color: '#64748b', fontSize: '13px' }}>
+                  Webcam snapshots analyzed by <strong>Amazon Rekognition</strong>. Supports real-time filtering for multi-candidate testing.
                 </p>
               </div>
-              <button style={{ ...styles.addQuestionBtn }} onClick={fetchProctorData}>🔄 Refresh</button>
+              <button
+                style={{
+                  ...styles.addQuestionBtn,
+                  background: 'linear-gradient(135deg, #0288d1, #01579b)',
+                  padding: '10px 20px',
+                  borderRadius: '10px',
+                  fontWeight: '600'
+                }}
+                onClick={fetchProctorData}
+              >
+                🔄 Sync Live Feed
+              </button>
             </div>
 
-            {proctorLoading ? (
-              <div style={{ textAlign: 'center', padding: '60px', color: '#64748b' }}>
-                <p style={{ fontSize: '24px' }}>⏳</p>
-                <p>Loading from AWS S3 + Rekognition...</p>
-              </div>
-            ) : proctorData.length === 0 ? (
-              <div style={styles.empty}>
-                <div style={styles.emptyIcon}>📷</div>
-                <h3 style={styles.emptyTitle}>No snapshots yet</h3>
-                <p style={styles.emptySub}>Once a candidate joins a contest, the browser requests webcam access and silently uploads a snapshot every 3 minutes to Amazon S3, then Amazon Rekognition analyses each photo for face count.</p>
-              </div>
-            ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '20px' }}>
-                {proctorData.map((snap) => (
-                  <div key={snap.id} style={{
-                    background: 'white', borderRadius: '14px', overflow: 'hidden',
-                    boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
-                    border: snap.suspiciousActivity ? '2px solid #ef4444' : '1px solid #e2e8f0'
-                  }}>
-                    <div style={{ position: 'relative' }}>
-                      <img src={snap.url} alt="Proctor Snapshot" style={{ width: '100%', height: '160px', objectFit: 'cover', display: 'block' }} />
-                      {snap.suspiciousActivity && (
-                        <div style={{ position: 'absolute', top: '8px', right: '8px', background: '#ef4444', color: 'white', borderRadius: '6px', padding: '3px 8px', fontSize: '11px', fontWeight: '700' }}>
-                          🚨 ALERT
-                        </div>
-                      )}
-                      <div style={{ position: 'absolute', top: '8px', left: '8px', background: 'rgba(0,0,0,0.65)', color: 'white', borderRadius: '6px', padding: '3px 8px', fontSize: '11px' }}>
-                        👤 {snap.faceCount} face{snap.faceCount !== 1 ? 's' : ''}
-                      </div>
-                    </div>
-                    <div style={{ padding: '12px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                        <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'linear-gradient(135deg, #a78bfa, #7c3aed)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '12px', fontWeight: '700', flexShrink: 0 }}>
-                          {snap.candidate?.name?.charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                          <p style={{ margin: 0, fontSize: '13px', fontWeight: '600', color: '#1e293b' }}>{snap.candidate?.name}</p>
-                          <p style={{ margin: 0, fontSize: '11px', color: '#94a3b8' }}>{snap.candidate?.email}</p>
-                        </div>
-                      </div>
-                      {snap.rekognitionAlert && (
-                        <div style={{ background: '#fff5f5', border: '1px solid #fecaca', borderRadius: '6px', padding: '6px 8px', fontSize: '12px', color: '#dc2626', marginBottom: '6px' }}>
-                          ⚠️ {snap.rekognitionAlert}
-                        </div>
-                      )}
-                      <p style={{ margin: 0, fontSize: '11px', color: '#94a3b8' }}>🕐 {formatDate(snap.timestamp)}</p>
+            {/* Dynamic metrics badges */}
+            {!proctorLoading && proctorData.length > 0 && (() => {
+              const uniqueCandidates = [...new Set(proctorData.map(s => s.candidate?.id))].length;
+              const totalAlerts = proctorData.filter(s => s.suspiciousActivity).length;
+              const alertedCandidates = [...new Set(proctorData.filter(s => s.suspiciousActivity).map(s => s.candidate?.id))].length;
+
+              return (
+                <div style={{ display: 'flex', gap: '20px', marginBottom: '24px' }}>
+                  <div style={{ flex: 1, background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '16px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <div style={{ fontSize: '24px', background: '#e0f2fe', borderRadius: '10px', width: '48px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0288d1' }}>📷</div>
+                    <div>
+                      <h4 style={{ margin: 0, fontSize: '20px', fontWeight: '700', color: '#0f172a' }}>{proctorData.length}</h4>
+                      <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#64748b', fontWeight: '500' }}>Total Snaps Captured</p>
                     </div>
                   </div>
-                ))}
+                  <div style={{ flex: 1, background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '16px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <div style={{ fontSize: '24px', background: '#f3e8ff', borderRadius: '10px', width: '48px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#7c3aed' }}>👤</div>
+                    <div>
+                      <h4 style={{ margin: 0, fontSize: '20px', fontWeight: '700', color: '#0f172a' }}>{uniqueCandidates}</h4>
+                      <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#64748b', fontWeight: '500' }}>Candidates Monitored</p>
+                    </div>
+                  </div>
+                  <div style={{
+                    flex: 1,
+                    background: alertedCandidates > 0 ? '#fff5f5' : '#f8fafc',
+                    border: alertedCandidates > 0 ? '1px solid #fecaca' : '1px solid #e2e8f0',
+                    borderRadius: '12px', padding: '16px', display: 'flex', alignItems: 'center', gap: '16px'
+                  }}>
+                    <div style={{ fontSize: '24px', background: alertedCandidates > 0 ? '#fee2e2' : '#f1f5f9', borderRadius: '10px', width: '48px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: alertedCandidates > 0 ? '#ef4444' : '#64748b' }}>🚨</div>
+                    <div>
+                      <h4 style={{ margin: 0, fontSize: '20px', fontWeight: '700', color: alertedCandidates > 0 ? '#ef4444' : '#0f172a' }}>
+                        {alertedCandidates} <span style={{ fontSize: '12px', fontWeight: '500', color: '#64748b' }}>({totalAlerts} warning{totalAlerts !== 1 ? 's' : ''})</span>
+                      </h4>
+                      <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#64748b', fontWeight: '500' }}>Suspicious Candidates</p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Live Filter Controls */}
+            {!proctorLoading && proctorData.length > 0 && (
+              <div style={{ display: 'flex', gap: '16px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '16px', marginBottom: '24px', alignItems: 'center' }}>
+                <div style={{ flex: 1, position: 'relative' }}>
+                  <input
+                    type="text"
+                    placeholder="🔍 Search candidate by name or email..."
+                    value={proctorSearch}
+                    onChange={(e) => setProctorSearch(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '10px 16px',
+                      borderRadius: '8px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '14px',
+                      outline: 'none',
+                      background: 'white',
+                      boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.05)'
+                    }}
+                  />
+                </div>
+                <button
+                  onClick={() => setShowOnlyAlerts(!showOnlyAlerts)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '10px 16px',
+                    borderRadius: '8px',
+                    border: '1px solid',
+                    borderColor: showOnlyAlerts ? '#f87171' : '#cbd5e1',
+                    background: showOnlyAlerts ? '#ef4444' : 'white',
+                    color: showOnlyAlerts ? 'white' : '#475569',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    boxShadow: showOnlyAlerts ? '0 4px 12px rgba(239,68,68,0.2)' : 'none'
+                  }}
+                >
+                  ⚠️ {showOnlyAlerts ? 'Showing Suspicious Only' : 'Filter Suspicious'}
+                </button>
               </div>
             )}
+
+            {/* Proctor gallery list */}
+            {proctorLoading ? (
+              <div style={{ textAlign: 'center', padding: '80px 0', color: '#64748b' }}>
+                <div style={{ fontSize: '36px', marginBottom: '16px', animation: 'spin 1.5s linear infinite' }}>⏳</div>
+                <h4 style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: '#334155' }}>Analysing Live Submissions</h4>
+                <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#64748b' }}>Fetching image feeds from Amazon S3...</p>
+              </div>
+            ) : (() => {
+              // Apply filtering
+              const filteredData = proctorData.filter(snap => {
+                const matchesSearch = !proctorSearch || 
+                  snap.candidate?.name?.toLowerCase().includes(proctorSearch.toLowerCase()) ||
+                  snap.candidate?.email?.toLowerCase().includes(proctorSearch.toLowerCase());
+                const matchesAlert = !showOnlyAlerts || snap.suspiciousActivity;
+                return matchesSearch && matchesAlert;
+              });
+
+              if (proctorData.length === 0) {
+                return (
+                  <div style={styles.empty}>
+                    <div style={styles.emptyIcon}>📷</div>
+                    <h3 style={styles.emptyTitle}>No snapshots yet</h3>
+                    <p style={styles.emptySub}>
+                      Once candidates enter the editor, snapshots are taken automatically every 3 minutes, sent to S3, and analysed via Amazon Rekognition face detection.
+                    </p>
+                  </div>
+                );
+              }
+
+              if (filteredData.length === 0) {
+                return (
+                  <div style={{ textAlign: 'center', padding: '60px', background: '#f8fafc', borderRadius: '12px', border: '1px dashed #cbd5e1' }}>
+                    <div style={{ fontSize: '32px', marginBottom: '12px' }}>🔍</div>
+                    <h4 style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: '#334155' }}>No matching snapshots found</h4>
+                    <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#64748b' }}>Try relaxing your search query or toggling off the suspicious filter.</p>
+                  </div>
+                );
+              }
+
+              return (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '24px' }}>
+                  {filteredData.map((snap) => (
+                    <div key={snap.id} style={{
+                      background: 'white', borderRadius: '14px', overflow: 'hidden',
+                      boxShadow: '0 4px 16px rgba(0,0,0,0.06)',
+                      border: snap.suspiciousActivity ? '2px solid #ef4444' : '1px solid #e2e8f0',
+                      transition: 'all 0.2s',
+                      transform: hoveredRow === `snap_${snap.id}` ? 'translateY(-4px)' : 'none'
+                    }}
+                    onMouseEnter={() => setHoveredRow(`snap_${snap.id}`)}
+                    onMouseLeave={() => setHoveredRow(null)}
+                    >
+                      <div style={{ position: 'relative', overflow: 'hidden' }}>
+                        <img
+                          src={snap.url}
+                          alt="Proctor Snapshot"
+                          style={{ width: '100%', height: '170px', objectFit: 'cover', display: 'block' }}
+                        />
+                        {snap.suspiciousActivity ? (
+                          <div style={{ position: 'absolute', top: '10px', right: '10px', background: '#ef4444', color: 'white', borderRadius: '6px', padding: '4px 10px', fontSize: '10px', fontWeight: '800', letterSpacing: '0.5px', boxShadow: '0 2px 8px rgba(239,68,68,0.4)' }}>
+                            🚨 SUSPICIOUS
+                          </div>
+                        ) : (
+                          <div style={{ position: 'absolute', top: '10px', right: '10px', background: '#10b981', color: 'white', borderRadius: '6px', padding: '4px 10px', fontSize: '10px', fontWeight: '800', letterSpacing: '0.5px' }}>
+                            ✅ SAFE
+                          </div>
+                        )}
+                        <div style={{ position: 'absolute', bottom: '10px', left: '10px', background: 'rgba(15,23,42,0.75)', color: 'white', borderRadius: '6px', padding: '3px 8px', fontSize: '11px', fontWeight: '600', backdropFilter: 'blur(4px)' }}>
+                          👤 {snap.faceCount} face{snap.faceCount !== 1 ? 's' : ''}
+                        </div>
+                      </div>
+                      <div style={{ padding: '16px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+                          <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '12px', fontWeight: '700', flexShrink: 0 }}>
+                            {snap.candidate?.name?.charAt(0).toUpperCase()}
+                          </div>
+                          <div style={{ overflow: 'hidden' }}>
+                            <p style={{ margin: 0, fontSize: '13px', fontWeight: '600', color: '#1e293b', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{snap.candidate?.name}</p>
+                            <p style={{ margin: 0, fontSize: '11px', color: '#64748b', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{snap.candidate?.email}</p>
+                          </div>
+                        </div>
+                        {snap.rekognitionAlert && (
+                          <div style={{ background: '#fff5f5', border: '1px solid #fecaca', borderRadius: '8px', padding: '8px 10px', fontSize: '11px', color: '#b91c1c', marginBottom: '12px', fontWeight: '500', lineHeight: '1.4' }}>
+                            ⚠️ {snap.rekognitionAlert}
+                          </div>
+                        )}
+                        <p style={{ margin: 0, fontSize: '11px', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          🕐 {formatDate(snap.timestamp)}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
           </div>
         )}
 
