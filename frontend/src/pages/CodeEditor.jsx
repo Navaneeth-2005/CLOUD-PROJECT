@@ -263,7 +263,19 @@ int main() {
   };
 
   const captureProctorSnapshot = async () => {
-    if (!videoRef.current || !canvasRef.current || !contestId) return;
+    console.log('[Proctor] Attempting to capture webcam snapshot...');
+    if (!videoRef.current) {
+      console.warn('[Proctor] videoRef.current is null, skipping capture');
+      return;
+    }
+    if (!canvasRef.current) {
+      console.warn('[Proctor] canvasRef.current is null, skipping capture');
+      return;
+    }
+    if (!contestId) {
+      console.warn('[Proctor] contestId is missing, skipping capture');
+      return;
+    }
     
     const video = videoRef.current;
     const canvas = canvasRef.current;
@@ -272,24 +284,36 @@ int main() {
     const width = video.videoWidth || 640;
     const height = video.videoHeight || 480;
 
+    console.log(`[Proctor] Canvas resolution: ${width}x${height}`);
     canvas.width = width;
     canvas.height = height;
     const ctx = canvas.getContext('2d');
-    ctx.drawImage(video, 0, 0, width, height);
+    try {
+      ctx.drawImage(video, 0, 0, width, height);
+    } catch (drawErr) {
+      console.error('[Proctor] Failed to draw video frame onto canvas:', drawErr);
+      return;
+    }
 
     canvas.toBlob(async (blob) => {
-      if (!blob) return;
+      if (!blob) {
+        console.warn('[Proctor] Canvas toBlob returned null/empty blob');
+        return;
+      }
+      console.log(`[Proctor] Captured blob size: ${blob.size} bytes. Uploading to server...`);
       try {
         const formData = new FormData();
         formData.append('contestId', contestId);
         formData.append('snapshot', blob, 'snapshot.jpeg');
         
-        await API.post('/proctor/upload', formData, {
+        const res = await API.post('/proctor/upload', formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
-        // Silently succeed
+        console.log('[Proctor] Upload successful!', res.data);
+        toast.info('📷 Proctoring snapshot captured & analysed by AWS Rekognition.', { autoClose: 2000 });
       } catch (err) {
-        console.error('Proctor snapshot upload failed', err);
+        console.error('[Proctor] Upload request failed:', err);
+        toast.error(`Proctor upload failed: ${err.response?.data?.message || err.message}`);
       }
     }, 'image/jpeg', 0.8);
   };
