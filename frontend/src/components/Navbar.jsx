@@ -44,6 +44,17 @@ const Navbar = () => {
                 onMouseLeave={() => setHovered('')}
               >Dashboard</Link>
 
+              <Link
+                to="/prep/dashboard"
+                style={{
+                  ...s.navLink,
+                  background: hovered === 'prep' ? 'rgba(6,182,212,0.15)' : 'transparent',
+                  color: hovered === 'prep' ? '#06b6d4' : '#94a3b8',
+                }}
+                onMouseEnter={() => setHovered('prep')}
+                onMouseLeave={() => setHovered('')}
+              >Interview Prep</Link>
+
               <button
                 onClick={handleLogout}
                 style={{

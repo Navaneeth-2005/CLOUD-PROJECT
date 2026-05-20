@@ -12,6 +12,9 @@ import CodeEditor from './pages/CodeEditor';
 import Leaderboard from './pages/Leaderboard';
 import ContestManagement from './pages/ContestManagement';
 import InterviewArena from './pages/InterviewArena';
+import PrepDashboard from './pages/PrepDashboard';
+import PrepCompanyDetail from './pages/PrepCompanyDetail';
+import PrepArticleView from './pages/PrepArticleView';
 
 const ProtectedRoute = ({ children, role }) => {
   const { user } = useAuth();
@@ -36,6 +39,21 @@ const AppRoutes = () => {
         <Route path="/candidate/dashboard" element={
           <ProtectedRoute role="candidate">
             <CandidateDashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/prep/dashboard" element={
+          <ProtectedRoute>
+            <PrepDashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/prep/company/:companyName" element={
+          <ProtectedRoute>
+            <PrepCompanyDetail />
+          </ProtectedRoute>
+        } />
+        <Route path="/prep/read/:id" element={
+          <ProtectedRoute>
+            <PrepArticleView />
           </ProtectedRoute>
         } />
         <Route path="/contest/:contestId/question/:questionId" element={
