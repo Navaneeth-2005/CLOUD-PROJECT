@@ -16,6 +16,7 @@ const registrationRoutes = require('./routes/registration');
 const proctorRoutes = require('./routes/proctor');
 const interviewRoutes = require('./routes/interview');
 const prepRoutes = require('./routes/prep');
+const notificationRoutes = require('./routes/notifications');
 
 const User = require('./models/User');
 const Contest = require('./models/Contest');
@@ -44,6 +45,7 @@ const io = new Server(server, {
 });
 
 initSocket(io);
+global.io = io;
 
 app.use(helmet());
 app.use(cors());
@@ -64,13 +66,14 @@ app.use('/api/registration', registrationRoutes);
 app.use('/api/proctor', proctorRoutes);
 app.use('/api/interviews', interviewRoutes);
 app.use('/api/prep', prepRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 const PORT = process.env.PORT || 5000;
 
 sequelize.authenticate()
   .then(() => {
     console.log('✅ MySQL connected!');
-    return sequelize.sync({ alter: true });
+    return sequelize.sync();
   })
   .then(() => {
     console.log('✅ Tables synced!');

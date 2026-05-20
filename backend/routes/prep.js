@@ -4,6 +4,7 @@ const { authMiddleware } = require('../middleware/auth');
 const PrepContribution = require('../models/PrepContribution');
 const PrepDoubt = require('../models/PrepDoubt');
 const User = require('../models/User');
+const notificationService = require('../services/notificationService');
 const sequelize = require('../config/db');
 
 // 1. Submit a preparation experience contribution
@@ -184,6 +185,30 @@ router.post('/contribution/:id/doubt', authMiddleware, async (req, res) => {
       content: content.trim(),
       parentDoubtId: parentDoubtId || null
     });
+
+    // Create notification
+    if (parentDoubtId) {
+      // This is a reply to an existing doubt
+      const parentDoubt = await PrepDoubt.findByPk(parentDoubtId);
+      if (parentDoubt && parentDoubt.senderId !== req.user.id) {
+        await notificationService.createNotification({
+          userId: parentDoubt.senderId,
+          type: 'reply_received',
+          entityId: id,
+          message: `${req.user.name} replied to your doubt.`
+        });
+      }
+    } else {
+      // New doubt on a contribution – notify the contribution owner
+      if (contribution.userId !== req.user.id) {
+        await notificationService.createNotification({
+          userId: contribution.userId,
+          type: 'doubt_received',
+          entityId: id,
+          message: `${req.user.name} asked a doubt on your contribution.`
+        });
+      }
+    }
 
     const populatedDoubt = await PrepDoubt.findByPk(doubt.id, {
       include: [

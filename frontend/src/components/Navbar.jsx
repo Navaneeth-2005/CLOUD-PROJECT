@@ -1,11 +1,15 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useNotifications } from '../context/NotificationContext';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const { notifications = [], unreadCount = 0, markRead = () => {} } = useNotifications() || {};
+  console.log('Navbar notifications length:', notifications.length);
   const [hovered, setHovered] = useState('');
+  const [showDropdown, setShowDropdown] = useState(false);
 
   const handleLogout = () => { logout(); navigate('/login'); };
 
@@ -53,6 +57,66 @@ const Navbar = () => {
 
         {/* Right: Actions */}
         <div style={s.right}>
+          {user && (
+            <>
+              {/* Notification bell */}
+              <div style={s.notificationWrapper}>
+                <span style={s.bellIcon} onClick={() => setShowDropdown(!showDropdown)}>
+                  🔔
+                  {unreadCount > 0 && (
+                    <span style={s.badgeCount}>{unreadCount}</span>
+                  )}
+                </span>
+                {showDropdown && (
+                  <div style={s.dropdown}>
+                    <div style={s.dropdownHeader}>
+                      <span style={s.dropdownTitle}>Notifications</span>
+                      {unreadCount > 0 && (
+                        <button
+                          style={s.markAllBtn}
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            await Promise.all(
+                              notifications.filter(n => !n.isRead).map(n => markRead(n.notificationId))
+                            );
+                          }}
+                        >
+                          Mark all read
+                        </button>
+                      )}
+                    </div>
+                    <div style={s.notifList}>
+                      {notifications.length === 0 ? (
+                        <div style={s.empty}>No notifications</div>
+                      ) : (
+                        notifications.slice(0, 5).map(n => (
+                          <div
+                            key={n.notificationId}
+                            style={{
+                              ...s.notifItem,
+                              background: n.isRead ? 'transparent' : 'rgba(139,92,246,0.1)',
+                              borderLeft: n.isRead ? '3px solid transparent' : '3px solid #a855f7'
+                            }}
+                            onClick={() => {
+                              navigate(`/prep/read/${n.entityId}`);
+                              markRead(n.notificationId);
+                              setShowDropdown(false);
+                            }}
+                          >
+                            <div style={s.notifMsg}>{n.message}</div>
+                            <div style={s.notifTime}>
+                              {new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
           {user ? (
             <>
               <div style={s.userChip}>
@@ -187,6 +251,7 @@ const s = {
     display: 'inline-block',
   },
   logoutBtn: {
+    // existing logoutBtn styles
     border: '1px solid rgba(239,68,68,0.4)',
     padding: '8px 16px', borderRadius: 10,
     fontSize: 13, fontWeight: 600,
@@ -194,6 +259,19 @@ const s = {
     transition: 'all 0.2s ease',
     fontFamily: "'Outfit', sans-serif",
   },
+  // Notification UI styles
+  notificationWrapper: { position: 'relative', marginRight: 12 },
+  bellIcon: { cursor: 'pointer', fontSize: 20, color: '#94a3b8' },
+  badgeCount: { position: 'absolute', top: -6, right: -8, background: '#ef4444', color: '#fff', borderRadius: '50%', padding: '2px 6px', fontSize: 10 },
+  dropdown: { position: 'absolute', right: 0, top: 'calc(100% + 8px)', background: 'rgba(8,8,16,0.96)', backdropFilter: 'blur(20px)', border: '1px solid rgba(139,92,246,0.2)', borderRadius: 14, boxShadow: '0 10px 40px rgba(0,0,0,0.6)', minWidth: 280, zIndex: 500, overflow: 'hidden' },
+  dropdownHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid rgba(139,92,246,0.15)', background: 'rgba(139,92,246,0.04)' },
+  dropdownTitle: { fontSize: 13, fontWeight: 700, color: '#f1f5f9' },
+  markAllBtn: { background: 'transparent', border: 'none', color: '#a855f7', fontSize: 11, fontWeight: 600, cursor: 'pointer', padding: 0, transition: 'color 0.2s' },
+  notifList: { maxHeight: 320, overflowY: 'auto' },
+  empty: { padding: '24px 16px', color: '#94a3b8', fontSize: 13, textAlign: 'center' },
+  notifItem: { padding: '12px 16px', cursor: 'pointer', borderBottom: '1px solid rgba(255,255,255,0.04)', color: '#f1f5f9', transition: 'all 0.2s ease', display: 'flex', flexDirection: 'column', gap: 4 },
+  notifMsg: { fontSize: 12, lineHeight: '1.4', color: '#e2e8f0' },
+  notifTime: { fontSize: 10, color: '#64748b' },
 };
 
 export default Navbar;

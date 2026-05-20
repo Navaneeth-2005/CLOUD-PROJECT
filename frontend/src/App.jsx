@@ -3,6 +3,7 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { NotificationProvider } from './context/NotificationContext';
 import Navbar from './components/Navbar';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -26,7 +27,7 @@ const ProtectedRoute = ({ children, role }) => {
 const AppRoutes = () => {
   const { user } = useAuth();
   return (
-    <>
+    <NotificationProvider userId={user?.id}>
       <Navbar />
       <Routes>
         <Route path="/login" element={<Login />} />
@@ -82,7 +83,7 @@ const AppRoutes = () => {
           <Route path="/interview/:token" element={<InterviewArena />} />
        </Routes>
       <ToastContainer position="top-right" autoClose={3000} />
-    </>
+    </NotificationProvider>
   );
 };
 

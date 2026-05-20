@@ -4,6 +4,14 @@ const initSocket = (io) => {
   io.on('connection', (socket) => {
     console.log(`⚡ WebSocket client connected: ${socket.id}`);
 
+    // Join notification room for real-time notifications
+    socket.on('join-user', ({ userId }) => {
+      if (userId) {
+        socket.join(`user_${userId}`);
+        console.log(`🔔 Socket ${socket.id} joined notification room: user_${userId}`);
+      }
+    });
+
     // Join collaborative interview room
     socket.on('join-room', async ({ token, name, role }) => {
       socket.join(token);
