@@ -134,16 +134,17 @@ const Navbar = () => {
 
           {user ? (
             <>
-              <div style={s.userChip} onClick={() => setShowProfileInfo(!showProfileInfo)}>
+              <div style={{ ...s.userChip, position: 'relative' }} onClick={() => setShowProfileInfo(!showProfileInfo)}>
                 <div style={s.avatar}>{user.name.charAt(0).toUpperCase()}</div>
                 <div>
                   <div style={s.userName}>{user.name}</div>
                   <div style={s.userRole}>{user.role}</div>
+                </div>
                 {showProfileInfo && (
                   <div style={s.profileDropdown}>
                     <div style={s.profileItem}>Contests Attended: {user.contestsAttended ?? '—'}</div>
                     <div style={s.profileItem}>Contributions: {user.contributions ?? '—'}</div>
-                    <div style={s.profileItem}>Member since: {new Date(user.createdAt).toLocaleDateString()}</div>
+                    <div style={s.profileItem}>Member since: {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '—'}</div>
                   </div>
                 )}
               </div>
