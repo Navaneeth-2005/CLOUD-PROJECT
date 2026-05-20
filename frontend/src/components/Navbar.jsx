@@ -9,6 +9,7 @@ const Navbar = () => {
   const { notifications = [], unreadCount = 0, markRead = () => {}, clearAll = () => {} } = useNotifications() || {};
   const [hovered, setHovered] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
+  const [showProfileInfo, setShowProfileInfo] = useState(false);
 
   const handleLogout = () => { logout(); navigate('/login'); };
 
@@ -133,12 +134,18 @@ const Navbar = () => {
 
           {user ? (
             <>
-              <div style={s.userChip}>
+              <div style={s.userChip} onClick={() => setShowProfileInfo(!showProfileInfo)}>
                 <div style={s.avatar}>{user.name.charAt(0).toUpperCase()}</div>
                 <div>
                   <div style={s.userName}>{user.name}</div>
                   <div style={s.userRole}>{user.role}</div>
-                </div>
+                {showProfileInfo && (
+                  <div style={s.profileDropdown}>
+                    <div style={s.profileItem}>Contests Attended: {user.contestsAttended ?? '—'}</div>
+                    <div style={s.profileItem}>Contributions: {user.contributions ?? '—'}</div>
+                    <div style={s.profileItem}>Member since: {new Date(user.createdAt).toLocaleDateString()}</div>
+                  </div>
+                )}
               </div>
 
               <button
@@ -273,7 +280,8 @@ const s = {
     transition: 'all 0.2s ease',
     fontFamily: "'Outfit', sans-serif",
   },
-  // Notification UI styles
+  profileDropdown: { position: 'absolute', right: 0, top: 'calc(100% + 8px)', background: 'rgba(8,8,16,0.96)', backdropFilter: 'blur(20px)', border: '1px solid rgba(139,92,246,0.2)', borderRadius: 14, boxShadow: '0 10px 40px rgba(0,0,0,0.6)', minWidth: 200, padding: '12px 16px', zIndex: 500 },
+  profileItem: { fontSize: 12, color: '#f1f5f9', marginBottom: 6 },
   notificationWrapper: { position: 'relative', marginRight: 12 },
   bellIcon: { cursor: 'pointer', fontSize: 20, color: '#94a3b8' },
   badgeCount: { position: 'absolute', top: -6, right: -8, background: '#ef4444', color: '#fff', borderRadius: '50%', padding: '2px 6px', fontSize: 10 },
