@@ -22,17 +22,10 @@ const Navbar = () => {
           <span style={s.badge}>PRO</span>
         </Link>
 
-        <div style={s.right}>
-          {user ? (
+        {/* Center: Navigation Links */}
+        <div style={s.center}>
+          {user && (
             <>
-              <div style={s.userChip}>
-                <div style={s.avatar}>{user.name.charAt(0).toUpperCase()}</div>
-                <div>
-                  <div style={s.userName}>{user.name}</div>
-                  <div style={s.userRole}>{user.role}</div>
-                </div>
-              </div>
-
               <Link
                 to={user.role === 'company' ? '/company/dashboard' : '/candidate/dashboard'}
                 style={{
@@ -42,7 +35,7 @@ const Navbar = () => {
                 }}
                 onMouseEnter={() => setHovered('dash')}
                 onMouseLeave={() => setHovered('')}
-              >Dashboard</Link>
+              >Attend Contest</Link>
 
               <Link
                 to="/prep/dashboard"
@@ -54,6 +47,21 @@ const Navbar = () => {
                 onMouseEnter={() => setHovered('prep')}
                 onMouseLeave={() => setHovered('')}
               >Interview Prep</Link>
+            </>
+          )}
+        </div>
+
+        {/* Right: Actions */}
+        <div style={s.right}>
+          {user ? (
+            <>
+              <div style={s.userChip}>
+                <div style={s.avatar}>{user.name.charAt(0).toUpperCase()}</div>
+                <div>
+                  <div style={s.userName}>{user.name}</div>
+                  <div style={s.userRole}>{user.role}</div>
+                </div>
+              </div>
 
               <button
                 onClick={handleLogout}
@@ -114,8 +122,10 @@ const s = {
   navInner: {
     maxWidth: 1280, margin: '0 auto',
     padding: '0 32px', height: 66,
-    display: 'flex', alignItems: 'center',
-    justifyContent: 'space-between',
+    display: 'grid',
+    gridTemplateColumns: '1fr auto 1fr',
+    alignItems: 'center',
+    gap: 16,
   },
   logoLink: {
     display: 'flex', alignItems: 'center',
@@ -141,7 +151,8 @@ const s = {
     border: '1px solid rgba(124,58,237,0.4)',
     padding: '2px 7px', borderRadius: 6, letterSpacing: '1.5px',
   },
-  right: { display: 'flex', alignItems: 'center', gap: 8 },
+  right: { display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-end' },
+  center: { display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'center' },
   userChip: {
     display: 'flex', alignItems: 'center', gap: 10,
     padding: '6px 14px 6px 8px',
