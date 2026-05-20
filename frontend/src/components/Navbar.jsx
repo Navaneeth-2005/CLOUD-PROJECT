@@ -6,8 +6,7 @@ import { useNotifications } from '../context/NotificationContext';
 const Navbar = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const { notifications = [], unreadCount = 0, markRead = () => {} } = useNotifications() || {};
-  console.log('Navbar notifications length:', notifications.length);
+  const { notifications = [], unreadCount = 0, markRead = () => {}, clearAll = () => {} } = useNotifications() || {};
   const [hovered, setHovered] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
 
@@ -71,19 +70,32 @@ const Navbar = () => {
                   <div style={s.dropdown}>
                     <div style={s.dropdownHeader}>
                       <span style={s.dropdownTitle}>Notifications</span>
-                      {unreadCount > 0 && (
-                        <button
-                          style={s.markAllBtn}
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            await Promise.all(
-                              notifications.filter(n => !n.isRead).map(n => markRead(n.notificationId))
-                            );
-                          }}
-                        >
-                          Mark all read
-                        </button>
-                      )}
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                        {unreadCount > 0 && (
+                          <button
+                            style={s.markAllBtn}
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              await Promise.all(
+                                notifications.filter(n => !n.isRead).map(n => markRead(n.notificationId))
+                              );
+                            }}
+                          >
+                            Mark all read
+                          </button>
+                        )}
+                        {notifications.length > 0 && (
+                          <button
+                            style={s.clearAllBtn}
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              await clearAll();
+                            }}
+                          >
+                            🗑 Clear all
+                          </button>
+                        )}
+                      </div>
                     </div>
                     <div style={s.notifList}>
                       {notifications.length === 0 ? (
@@ -272,6 +284,7 @@ const s = {
   notifItem: { padding: '12px 16px', cursor: 'pointer', borderBottom: '1px solid rgba(255,255,255,0.04)', color: '#f1f5f9', transition: 'all 0.2s ease', display: 'flex', flexDirection: 'column', gap: 4 },
   notifMsg: { fontSize: 12, lineHeight: '1.4', color: '#e2e8f0' },
   notifTime: { fontSize: 10, color: '#64748b' },
+  clearAllBtn: { background: 'transparent', border: '1px solid rgba(239,68,68,0.35)', color: '#ef4444', fontSize: 10, fontWeight: 600, cursor: 'pointer', padding: '3px 8px', borderRadius: 6, transition: 'all 0.2s' },
 };
 
 export default Navbar;

@@ -1,6 +1,6 @@
 // notificationService.js – wrapper around DynamoDB for managing notifications
 const { DynamoDBClient } = require("@aws-sdk/client-dynamodb");
-const { PutCommand, QueryCommand, UpdateCommand, DynamoDBDocumentClient } = require("@aws-sdk/lib-dynamodb");
+const { PutCommand, QueryCommand, UpdateCommand, DeleteCommand, BatchWriteCommand, DynamoDBDocumentClient } = require("@aws-sdk/lib-dynamodb");
 const { v4: uuidv4 } = require("uuid");
 
 // DynamoDB client – region will be inherited from environment (AWS_REGION)
@@ -80,8 +80,43 @@ async function markNotificationAsRead(userId, notificationId) {
   return response.Attributes;
 }
 
+/**
+ * Delete ALL notifications for a user (clear history).
+ * DynamoDB BatchWrite supports max 25 items per batch.
+ * @param {string} userId
+ */
+async function deleteAllNotifications(userId) {
+  const items = await getNotifications(userId);
+  if (items.length === 0) return;
+
+  // BatchWriteItem supports max 25 requests per call
+  const batches = [];
+  for (let i = 0; i < items.length; i += 25) {
+    batches.push(items.slice(i, i + 25));
+  }
+
+  for (const batch of batches) {
+    const deleteRequests = batch.map(item => ({
+      DeleteRequest: {
+        Key: {
+          userId: String(userId),
+          notificationId: item.notificationId
+        }
+      }
+    }));
+
+    const batchCmd = new BatchWriteCommand({
+      RequestItems: {
+        Notifications: deleteRequests
+      }
+    });
+    await ddbDocClient.send(batchCmd);
+  }
+}
+
 module.exports = {
   createNotification,
   getNotifications,
-  markNotificationAsRead
+  markNotificationAsRead,
+  deleteAllNotifications
 };

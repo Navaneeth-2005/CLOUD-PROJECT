@@ -93,10 +93,19 @@ export const NotificationProvider = ({ children, userId }) => {
     }
   };
 
+  const clearAll = async () => {
+    try {
+      await API.delete('/notifications');
+      setNotifications([]);
+    } catch (e) {
+      console.error('Failed to clear notifications', e);
+    }
+  };
+
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
   return (
-    <NotificationContext.Provider value={{ notifications, unreadCount, markRead }}>
+    <NotificationContext.Provider value={{ notifications, unreadCount, markRead, clearAll }}>
       {children}
     </NotificationContext.Provider>
   );

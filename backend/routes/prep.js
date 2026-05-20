@@ -186,6 +186,10 @@ router.post('/contribution/:id/doubt', authMiddleware, async (req, res) => {
       parentDoubtId: parentDoubtId || null
     });
 
+    // Look up the sender's name from DB (JWT only has id + role)
+    const senderUser = await User.findByPk(req.user.id, { attributes: ['name'] });
+    const senderName = senderUser ? senderUser.name : 'Someone';
+
     // Create notification
     if (parentDoubtId) {
       // This is a reply to an existing doubt
@@ -195,7 +199,7 @@ router.post('/contribution/:id/doubt', authMiddleware, async (req, res) => {
           userId: parentDoubt.senderId,
           type: 'reply_received',
           entityId: id,
-          message: `${req.user.name} replied to your doubt.`
+          message: `${senderName} replied to your doubt.`
         });
       }
     } else {
@@ -205,7 +209,7 @@ router.post('/contribution/:id/doubt', authMiddleware, async (req, res) => {
           userId: contribution.userId,
           type: 'doubt_received',
           entityId: id,
-          message: `${req.user.name} asked a doubt on your contribution.`
+          message: `${senderName} asked a doubt on your contribution.`
         });
       }
     }
