@@ -69,4 +69,37 @@ router.post('/login', async (req, res) => {
   }
 });
 
+const { authMiddleware } = require('../middleware/auth');
+const ContestRegistration = require('../models/ContestRegistration');
+const PrepContribution = require('../models/PrepContribution');
+
+// Get current user profile with stats
+router.get('/profile', authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findByPk(req.user.id, {
+      attributes: { exclude: ['password'] }
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const contestsCount = await ContestRegistration.count({
+      where: { userId: user.id }
+    });
+
+    const contributionsCount = await PrepContribution.count({
+      where: { userId: user.id }
+    });
+
+    res.json({
+      ...user.toJSON(),
+      contestsAttended: contestsCount,
+      contributions: contributionsCount
+    });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
 module.exports = router;

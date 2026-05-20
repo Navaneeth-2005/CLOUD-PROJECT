@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationContext';
+import API from '../api/axios';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
@@ -10,6 +11,23 @@ const Navbar = () => {
   const [hovered, setHovered] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
   const [showProfileInfo, setShowProfileInfo] = useState(false);
+  const [profileStats, setProfileStats] = useState(null);
+  const [loadingProfile, setLoadingProfile] = useState(false);
+
+  const fetchProfileStats = async () => {
+    if (!showProfileInfo) {
+      setLoadingProfile(true);
+      try {
+        const res = await API.get('/auth/profile');
+        setProfileStats(res.data);
+      } catch (err) {
+        console.error('Error fetching profile stats', err);
+      } finally {
+        setLoadingProfile(false);
+      }
+    }
+    setShowProfileInfo(!showProfileInfo);
+  };
 
   const handleLogout = () => { logout(); navigate('/login'); };
 
@@ -134,17 +152,25 @@ const Navbar = () => {
 
           {user ? (
             <>
-              <div style={{ ...s.userChip, position: 'relative' }} onClick={() => setShowProfileInfo(!showProfileInfo)}>
+              <div style={{ ...s.userChip, position: 'relative', cursor: 'pointer' }} onClick={fetchProfileStats}>
                 <div style={s.avatar}>{user.name.charAt(0).toUpperCase()}</div>
                 <div>
                   <div style={s.userName}>{user.name}</div>
                   <div style={s.userRole}>{user.role}</div>
                 </div>
                 {showProfileInfo && (
-                  <div style={s.profileDropdown}>
-                    <div style={s.profileItem}>Contests Attended: {user.contestsAttended ?? '—'}</div>
-                    <div style={s.profileItem}>Contributions: {user.contributions ?? '—'}</div>
-                    <div style={s.profileItem}>Member since: {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '—'}</div>
+                  <div style={s.profileDropdown} onClick={(e) => e.stopPropagation()}>
+                    {loadingProfile ? (
+                      <div style={s.profileItem}>Loading stats...</div>
+                    ) : profileStats ? (
+                      <>
+                        <div style={s.profileItem}>Contests Attended: {profileStats.contestsAttended ?? 0}</div>
+                        <div style={s.profileItem}>Contributions: {profileStats.contributions ?? 0}</div>
+                        <div style={s.profileItem}>Member since: {profileStats.createdAt ? new Date(profileStats.createdAt).toLocaleDateString() : '—'}</div>
+                      </>
+                    ) : (
+                      <div style={s.profileItem}>Failed to load stats</div>
+                    )}
                   </div>
                 )}
               </div>
