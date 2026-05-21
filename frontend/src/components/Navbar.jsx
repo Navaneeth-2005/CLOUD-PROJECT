@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationContext';
@@ -8,6 +8,19 @@ const Navbar = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const { notifications = [], unreadCount = 0, markRead = () => {}, clearAll = () => {} } = useNotifications() || {};
+
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem('theme') || 'dark';
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+  };
   const [hovered, setHovered] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
   const [showProfileInfo, setShowProfileInfo] = useState(false);
@@ -90,6 +103,21 @@ const Navbar = () => {
 
         {/* Right: Actions */}
         <div style={s.right}>
+          <button
+            onClick={toggleTheme}
+            style={{
+              ...s.themeToggleBtn,
+              background: hovered === 'theme' ? 'rgba(139,92,246,0.15)' : 'rgba(139,92,246,0.06)',
+              borderColor: hovered === 'theme' ? 'var(--primary-light)' : 'var(--border-default)',
+              transform: hovered === 'theme' ? 'scale(1.08) rotate(15deg)' : 'scale(1) rotate(0deg)',
+            }}
+            onMouseEnter={() => setHovered('theme')}
+            onMouseLeave={() => setHovered('')}
+            title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+          >
+            {theme === 'dark' ? '☀️' : '🌙'}
+          </button>
+
           {user && user.role !== 'company' && (
             <>
               {/* Notification bell */}
@@ -236,11 +264,11 @@ const Navbar = () => {
 const s = {
   nav: {
     position: 'sticky', top: 0, zIndex: 200,
-    background: 'rgba(8,8,16,0.85)',
+    background: 'var(--bg-nav)',
     backdropFilter: 'blur(20px)',
     WebkitBackdropFilter: 'blur(20px)',
-    borderBottom: '1px solid rgba(139,92,246,0.2)',
-    boxShadow: '0 4px 24px rgba(0,0,0,0.5)',
+    borderBottom: '1px solid var(--border-nav)',
+    boxShadow: 'var(--shadow-nav)',
     animation: 'navSlide 0.4s ease-out',
     fontFamily: "'Outfit', sans-serif",
   },
@@ -264,7 +292,7 @@ const s = {
     flexShrink: 0,
   },
   logoText: {
-    fontSize: 20, fontWeight: 800, color: '#fff', letterSpacing: '-0.5px',
+    fontSize: 20, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.5px',
   },
   logoAccent: {
     background: 'linear-gradient(135deg, #a855f7, #06b6d4)',
@@ -292,13 +320,13 @@ const s = {
     fontSize: 14, fontWeight: 800, color: '#fff',
     boxShadow: '0 0 14px rgba(124,58,237,0.5)',
   },
-  userName: { fontSize: 13, fontWeight: 700, color: '#f1f5f9', lineHeight: '1.2' },
+  userName: { fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', lineHeight: '1.2' },
   userRole: {
     fontSize: 10, color: '#a855f7', textTransform: 'capitalize',
     fontWeight: 600, letterSpacing: '0.5px',
   },
   navLink: {
-    color: '#94a3b8', textDecoration: 'none',
+    color: 'var(--text-secondary)', textDecoration: 'none',
     fontSize: 14, fontWeight: 600,
     padding: '8px 16px', borderRadius: 10,
     transition: 'all 0.2s ease',
@@ -312,7 +340,6 @@ const s = {
     display: 'inline-block',
   },
   logoutBtn: {
-    // existing logoutBtn styles
     border: '1px solid rgba(239,68,68,0.4)',
     padding: '8px 16px', borderRadius: 10,
     fontSize: 13, fontWeight: 600,
@@ -320,21 +347,36 @@ const s = {
     transition: 'all 0.2s ease',
     fontFamily: "'Outfit', sans-serif",
   },
-  profileDropdown: { position: 'absolute', right: 0, top: 'calc(100% + 8px)', background: 'rgba(8,8,16,0.96)', backdropFilter: 'blur(20px)', border: '1px solid rgba(139,92,246,0.2)', borderRadius: 14, boxShadow: '0 10px 40px rgba(0,0,0,0.6)', minWidth: 200, padding: '12px 16px', zIndex: 500 },
-  profileItem: { fontSize: 12, color: '#f1f5f9', marginBottom: 6 },
+  profileDropdown: { position: 'absolute', right: 0, top: 'calc(100% + 8px)', background: 'var(--bg-profile-dropdown)', backdropFilter: 'blur(20px)', border: '1px solid var(--border-nav)', borderRadius: 14, boxShadow: 'var(--shadow-card)', minWidth: 200, padding: '12px 16px', zIndex: 500 },
+  profileItem: { fontSize: 12, color: 'var(--text-primary)', marginBottom: 6 },
   notificationWrapper: { position: 'relative', marginRight: 12 },
-  bellIcon: { cursor: 'pointer', fontSize: 20, color: '#94a3b8' },
+  bellIcon: { cursor: 'pointer', fontSize: 20, color: 'var(--text-secondary)' },
   badgeCount: { position: 'absolute', top: -6, right: -8, background: '#ef4444', color: '#fff', borderRadius: '50%', padding: '2px 6px', fontSize: 10 },
-  dropdown: { position: 'absolute', right: 0, top: 'calc(100% + 8px)', background: 'rgba(8,8,16,0.96)', backdropFilter: 'blur(20px)', border: '1px solid rgba(139,92,246,0.2)', borderRadius: 14, boxShadow: '0 10px 40px rgba(0,0,0,0.6)', minWidth: 280, zIndex: 500, overflow: 'hidden' },
-  dropdownHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid rgba(139,92,246,0.15)', background: 'rgba(139,92,246,0.04)' },
-  dropdownTitle: { fontSize: 13, fontWeight: 700, color: '#f1f5f9' },
+  dropdown: { position: 'absolute', right: 0, top: 'calc(100% + 8px)', background: 'var(--bg-profile-dropdown)', backdropFilter: 'blur(20px)', border: '1px solid var(--border-nav)', borderRadius: 14, boxShadow: 'var(--shadow-card)', minWidth: 280, zIndex: 500, overflow: 'hidden' },
+  dropdownHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid var(--border-nav)', background: 'var(--bg-dropdown-header)' },
+  dropdownTitle: { fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' },
   markAllBtn: { background: 'transparent', border: 'none', color: '#a855f7', fontSize: 11, fontWeight: 600, cursor: 'pointer', padding: 0, transition: 'color 0.2s' },
   notifList: { maxHeight: 320, overflowY: 'auto' },
-  empty: { padding: '24px 16px', color: '#94a3b8', fontSize: 13, textAlign: 'center' },
-  notifItem: { padding: '12px 16px', cursor: 'pointer', borderBottom: '1px solid rgba(255,255,255,0.04)', color: '#f1f5f9', transition: 'all 0.2s ease', display: 'flex', flexDirection: 'column', gap: 4 },
-  notifMsg: { fontSize: 12, lineHeight: '1.4', color: '#e2e8f0' },
-  notifTime: { fontSize: 10, color: '#64748b' },
+  empty: { padding: '24px 16px', color: 'var(--text-secondary)', fontSize: 13, textAlign: 'center' },
+  notifItem: { padding: '12px 16px', cursor: 'pointer', borderBottom: '1px solid var(--border-nav)', color: 'var(--text-primary)', transition: 'all 0.2s ease', display: 'flex', flexDirection: 'column', gap: 4 },
+  notifMsg: { fontSize: 12, lineHeight: '1.4', color: 'var(--text-secondary)' },
+  notifTime: { fontSize: 10, color: 'var(--text-muted)' },
   clearAllBtn: { background: 'transparent', border: '1px solid rgba(239,68,68,0.35)', color: '#ef4444', fontSize: 10, fontWeight: 600, cursor: 'pointer', padding: '3px 8px', borderRadius: 6, transition: 'all 0.2s' },
+  themeToggleBtn: {
+    background: 'rgba(139,92,246,0.06)',
+    border: '1px solid var(--border-default)',
+    borderRadius: 10,
+    width: 38,
+    height: 38,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: 18,
+    cursor: 'pointer',
+    color: 'var(--text-primary)',
+    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    fontFamily: "'Outfit', sans-serif",
+  },
 };
 
 export default Navbar;
