@@ -324,6 +324,12 @@ JSON Structure:
 
   } catch (err) {
     console.error('Error scanning resume:', err);
+    if (err.status === 429 || err.message?.includes('429') || err.message?.toLowerCase().includes('quota')) {
+      return res.status(429).json({
+        message: 'Gemini API Rate Limit or Daily Quota Exceeded. The Free Tier is limited to 15 requests per day, and large PDFs consume significant tokens. Please wait a minute before retrying, or verify your API key limits in Google AI Studio.',
+        error: err.message
+      });
+    }
     res.status(500).json({ message: 'Server error during resume analysis', error: err.message });
   }
 });
