@@ -71,6 +71,19 @@ const Navbar = () => {
                   onMouseLeave={() => setHovered('')}
                 >Interview Prep</Link>
               )}
+
+              {user && user.role !== 'company' && (
+                <Link
+                  to="/prep/resume-scanner"
+                  style={{
+                    ...s.navLink,
+                    background: hovered === 'resume' ? 'rgba(168,85,247,0.15)' : 'transparent',
+                    color: hovered === 'resume' ? '#a855f7' : '#94a3b8',
+                  }}
+                  onMouseEnter={() => setHovered('resume')}
+                  onMouseLeave={() => setHovered('')}
+                >📄 Resume Scanner</Link>
+              )}
             </>
           )}
         </div>

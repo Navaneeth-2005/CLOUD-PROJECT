@@ -7,6 +7,14 @@ const User = require('../models/User');
 const notificationService = require('../services/notificationService');
 const sequelize = require('../config/db');
 
+// Multi-part form handler for resume uploads
+const multer = require('multer');
+const upload = multer({ limits: { fileSize: 5 * 1024 * 1024 } }); // 5MB limit
+
+// Google Gemini API setup
+const { GoogleGenerativeAI } = require('@google/generative-ai');
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+
 // 1. Submit a preparation experience contribution
 router.post('/contribute', authMiddleware, async (req, res) => {
   try {
@@ -231,6 +239,92 @@ router.post('/contribution/:id/doubt', authMiddleware, async (req, res) => {
 
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// 6. Candidate Resume Scanner & Job Match Optimizer (using Google Gemini 1.5 Flash)
+router.post('/resume-scan', authMiddleware, upload.single('resume'), async (req, res) => {
+  try {
+    const { jobDescription, targetRole } = req.body;
+    const file = req.file;
+
+    if (!jobDescription || !targetRole) {
+      return res.status(400).json({ message: 'Job description and target role are required' });
+    }
+
+    if (!file) {
+      return res.status(400).json({ message: 'Resume PDF file is required' });
+    }
+
+    if (!process.env.GEMINI_API_KEY) {
+      return res.status(500).json({ message: 'Gemini API key is missing in server environment variables.' });
+    }
+
+    // Initialize Gemini model
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+    // Prepare PDF data
+    const pdfData = {
+      inlineData: {
+        data: file.buffer.toString("base64"),
+        mimeType: "application/pdf"
+      }
+    };
+
+    // Prompt instructing the model to act as an ATS and return structured JSON
+    const prompt = `
+You are a world-class Applicant Tracking System (ATS) and expert SDE Recruiter.
+Analyze the attached Resume PDF against the Target Job Role: "${targetRole}" and the Job Description provided below.
+
+Job Description:
+"""
+${jobDescription}
+"""
+
+Evaluate the resume dynamically. Your output must be a single, valid JSON object with EXACTLY the following keys. Do NOT include markdown code blocks (e.g. \`\`\`json or \`\`\`), just return raw JSON text.
+
+JSON Structure:
+{
+  "matchScore": <integer between 0 and 100 representing how well the resume matches the JD and target role>,
+  "matchedSkills": [<array of technology/process skills found in both the resume and JD or relevant to the role>],
+  "missingSkills": [<array of key technologies/tools/skills specified in the JD or highly expected for a "${targetRole}" role that are missing from the resume>],
+  "strengths": [<array of 3-4 specific, high-value accomplishments or strong skills highlighted in the resume>],
+  "improvements": [<array of 3-4 constructive, specific areas where the resume is weak, lacks metrics, or misses critical requirements>],
+  "actionItems": [<array of 3-4 clear, actionable checkbox items (e.g., "Add Docker to your skills section", "Quantify the scale of your database migration in the Google experience")>],
+  "bulletPointSuggestions": [
+    {
+      "original": "<a representative weak or basic bullet point from the resume>",
+      "suggested": "<an optimized, high-impact rewrite of that bullet point following the STAR method with a quantified placeholder metric>",
+      "reason": "<short explanation of why the rewrite is superior and what recruiters look for>"
+    }
+  ]
+}
+`;
+
+    const result = await model.generateContent([pdfData, prompt]);
+    const responseText = result.response.text().trim();
+
+    // Clean up potential markdown formatting in response
+    let jsonString = responseText;
+    if (jsonString.startsWith('```')) {
+      jsonString = jsonString.replace(/^```json\s*/, '').replace(/```\s*$/, '');
+    }
+
+    try {
+      const evaluation = JSON.parse(jsonString);
+      res.json(evaluation);
+    } catch (parseErr) {
+      console.error('Gemini response was not valid JSON:', responseText);
+      res.status(500).json({
+        message: 'Failed to parse AI response. Please try again.',
+        error: parseErr.message,
+        rawText: responseText
+      });
+    }
+
+  } catch (err) {
+    console.error('Error scanning resume:', err);
+    res.status(500).json({ message: 'Server error during resume analysis', error: err.message });
   }
 });
 

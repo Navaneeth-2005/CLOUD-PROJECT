@@ -16,6 +16,7 @@ import InterviewArena from './pages/InterviewArena';
 import PrepDashboard from './pages/PrepDashboard';
 import PrepCompanyDetail from './pages/PrepCompanyDetail';
 import PrepArticleView from './pages/PrepArticleView';
+import ResumeOptimizer from './pages/ResumeOptimizer';
 
 const ProtectedRoute = ({ children, role }) => {
   const { user } = useAuth();
@@ -45,6 +46,11 @@ const AppRoutes = () => {
         <Route path="/prep/dashboard" element={
           <ProtectedRoute>
             <PrepDashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/prep/resume-scanner" element={
+          <ProtectedRoute>
+            <ResumeOptimizer />
           </ProtectedRoute>
         } />
         <Route path="/prep/company/:companyName" element={
