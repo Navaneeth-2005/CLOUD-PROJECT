@@ -261,7 +261,7 @@ router.post('/resume-scan', authMiddleware, upload.single('resume'), async (req,
     }
 
     // Initialize Gemini model
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     // Prepare PDF data
     const pdfData = {
