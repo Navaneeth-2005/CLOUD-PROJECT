@@ -101,19 +101,4 @@ This forms a complete GitOps loop — validated code reaches production automati
 
 ---
 
-## 🚀 Getting Started
-
-> _Add local setup instructions here — env variables, `docker-compose up`, required AWS/Gemini API keys, etc._
-
-```bash
-git clone <repo-url>
-cd codestorm
-# add setup steps
-```
-
----
-
-## 📄 License
-
-_Add license here._
 
