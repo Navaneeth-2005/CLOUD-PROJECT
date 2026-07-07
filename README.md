@@ -2,7 +2,7 @@
 
 A distributed, high-performance coding assessment and interview preparation platform — built for recruiters and candidates alike. CodeStorm combines live coding contests, 1:1 mock interviews, crowdsourced interview prep, AI resume matching, and AI-powered proctoring, all running on a secure, auto-scaling AWS/Kubernetes backend.
 
-> 🎥 **Live demo:** AWS infrastructure is currently spun down to manage cloud costs. [Demo video link here] — redeployable on request via the Terraform/IaC in this repo.
+>  AWS infrastructure is currently spun down to manage cloud costs. 
 
 ---
 
